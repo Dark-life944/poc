@@ -1,4 +1,4 @@
-## WebKit Heap Use-After-Free bug 287908 Proof-of-Concept (PoC):
+## WebKit Heap Use-After-Free bug (#287908) Proof-of-Concept (PoC):
 
 This Proof-of-Concept (PoC) demonstrates a heap use-after-free (UAF) vulnerability in WebKit, the rendering engine used by browsers like Safari and the PlayStation 4/5 web browser.
 
