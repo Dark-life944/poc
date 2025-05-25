@@ -21,3 +21,6 @@ the PoC causes the blue square to disappear and may crash the browser due to the
 
 ## reference:
 https://github.com/WebKit/WebKit/commit/adc161c58c5ab243b40ce1e11cef32abea4a09e0.patch
+
+### credit:
+big thanks for ntfargo and his hard work
