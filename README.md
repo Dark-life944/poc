@@ -4,7 +4,7 @@ This Proof-of-Concept (PoC) demonstrates a heap use-after-free (UAF) vulnerabili
 
  The exploit targets a flaw in WebKit's handling of DOM layer tree updates, specifically when manipulating the content-visibility CSS property and removing DOM elements.
 
-The PoC creates a simple HTML page with a parent div (.container) and a child div (.child, styled as a blue square). Upon execution, it performs the following steps:
+a simple HTML page with a parent div (.container) and a child div (.child, styled as a blue square). Upon execution, it performs the following steps:
 
 1-Sets content-visibility: hidden on the parent div to alter the layer tree.
 
