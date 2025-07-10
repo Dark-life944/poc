@@ -22,14 +22,15 @@
             };
 
             function triggerGC() {
-                let memoryHog = new Array(5000);
-                for (let i = 0; i < 5000; i++) {
-                    memoryHog[i] = new Uint8Array(1024);
+                let memoryHog = new Array(10000);
+                for (let i = 0; i < 10000; i++) {
+                    memoryHog[i] = new Uint8Array(2048);
                 }
                 targetObject = null;
                 if (typeof gc === "function") {
                     gc();
                 }
+                for (let i = 0; i < 3; i++) new ArrayBuffer(1024 * 1024); // Additional pressure
             }
 
             triggerGC();
@@ -40,7 +41,7 @@
                     console.error(e.message);
                     alert(e.message);
                 }
-            }, 200);
+            }, 500); // Increased delay
         }
     </script>
 </head>
