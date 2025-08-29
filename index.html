@@ -1,38 +1,53 @@
-<style>
-:not(marker) {
-  background: url(#svgvar00007) repeat-x scroll top left;
-  zoom: 50%;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simplified Path Invalidity Test</title>
+    <style>
+        #console { white-space: pre; font-family: monospace; height: 300px; overflow-y: scroll; }
+        canvas { border: 1px solid black; }
+    </style>
+</head>
+<body>
+    <p id="status">Initializing...</p>
+    <div id="console"></div>
+    <canvas id="myCanvas" width="500" height="500"></canvas>
+    <script>
+function logDebug(message) {
+    let timestamp = new Date().toISOString();
+    let debugMsg = `[${timestamp}] ${message}\n`;
+    console.log(debugMsg);
+    let consoleDiv = document.getElementById("console");
+    consoleDiv.innerHTML += debugMsg;
+    consoleDiv.scrollTop = consoleDiv.scrollHeight; // Auto-scroll
 }
-details {
-  font: 1pt monospace;
+
+function createInvalidPath() {
+    const ctx = document.getElementById("myCanvas").getContext("2d");
+    logDebug("Step 1: Starting to draw invalid path...");
+    try {
+        ctx.beginPath();
+        ctx.moveTo(43, 22); // Normal move
+        ctx.quadraticCurveTo(7, 12, 91, 109); // Normal curve
+        ctx.quadraticCurveTo(122, 46, 54, 69, 70, 506806141048); // Invalid large endpoint
+        ctx.arcTo(62, 18, 72, 88, 37); // Normal arc
+        ctx.rect(67, 60, 31, 4875397766316111); // Invalid large height
+        ctx.stroke(); // Attempt to render
+        logDebug("Step 2: Path drawing completed (no crash yet).");
+    } catch (e) {
+        logDebug(`Step 2: Error during path drawing: ${e.message}`);
+        document.getElementById("status").innerHTML = "Exploit failed!";
+        return;
+    }
+    logDebug("Step 3: Test completed - check for crash or rendering issues.");
+    document.getElementById("status").innerHTML = "Success - Test Completed!";
 }
-</style>
 
-<script>
-window.testRunner?.dumpAsText();
-
-function testRun() {
-  buttonID.outerHTML = "undefined";
-}
-
-function eventhandler3() {
-  detailsID.open = false;
-  
-  document.body.offsetHeight;
-  tableID.deleteRow(1);
-}
-</script>
-
-<body onload=testRun()>
-<button id=buttonID>
-<details id=detailsID ontoggle="eventhandler3()" open="true">
-<summary>
-<table id=tableID align="right">
-<tr></tr>
-<tfoot><th></th></tfoot>
-<th>PASS if no crash or assert</th>
-</table>
-<iframe srcdoc="">content</iframe>
-</summary>
-<span>
-<li><embed><ol>
+window.onload = function() {
+    logDebug("Initializing PoC...");
+    createInvalidPath();
+};
+    </script>
+</body>
+</html>
