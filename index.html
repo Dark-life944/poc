@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Improved Local UAF Simulation</title>
+    <title>Enhanced Local UAF Simulation</title>
     <style>
         #console { white-space: pre; font-family: monospace; height: 300px; overflow-y: scroll; }
     </style>
@@ -24,14 +24,14 @@ function logDebug(message) {
 }
 
 function simulateRace() {
-    logDebug("Starting local simulation for UAF...");
+    logDebug("Starting enhanced local simulation for UAF...");
     let logIdentifier = "";
     let isProcessing = false;
 
     function updateLog() {
         logDebug("Step 1: Attempting to update log identifier...");
         try {
-            logIdentifier = "A".repeat(100); // تقليل الحجم للاختبار الأولي
+            logIdentifier = "A".repeat(1000); // زيادة الحجم
             logDebug("Step 2: Log identifier updated successfully.");
         } catch (e) {
             logDebug(`Step 2: Error updating log: ${e.message}`);
@@ -52,27 +52,34 @@ function simulateRace() {
         }
     }
 
-    // تنفيذ بسيط للاختبار
+    // تنفيذ أولي مع تأخير
     logDebug("Step 5: Scheduling initial updates...");
     setTimeout(() => {
         isProcessing = true;
         updateLog();
         processFrame();
         logDebug("Step 6: Initial simulation completed.");
-        document.getElementById("status").innerHTML = "Success - Test Completed!";
-    }, 100); // تأخير لضمان تحميل DOM
+    }, 100);
 
-    // إضافة تكرار إذا نجح
+    // تكرار مكثف
+    logDebug("Step 7: Starting intensive race simulation...");
+    for (let z = 0; z < 10; z++) {
+        setTimeout(() => {
+            for (let x = 0; x < 50; x++) { // زيادة التكرار
+                setTimeout(() => {
+                    isProcessing = true;
+                    updateLog();
+                    setTimeout(processFrame, Math.random() * 5); // توقيت عشوائي قصير
+                    logDebug(`Step 8: Iteration ${x} in loop ${z} completed.`);
+                }, Math.random() * 10);
+            }
+        }, 200 * z);
+    }
+
     setTimeout(() => {
-        for (let i = 0; i < 10; i++) {
-            setTimeout(() => {
-                isProcessing = true;
-                updateLog();
-                processFrame();
-                logDebug(`Step 7: Iteration ${i} completed.`);
-            }, i * 50);
-        }
-    }, 200);
+        logDebug("Step 9: Simulation completed - check for crash.");
+        document.getElementById("status").innerHTML = "Success - Test Completed!";
+    }, 5000); // زيادة الوقت للسماح بالتكرار
 }
 
 window.onload = function() {
