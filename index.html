@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simplified Path Invalidity Test</title>
+    <title>Local UAF Simulation</title>
     <style>
         #console { white-space: pre; font-family: monospace; height: 300px; overflow-y: scroll; }
-        canvas { border: 1px solid black; }
     </style>
 </head>
 <body>
     <p id="status">Initializing...</p>
     <div id="console"></div>
-    <canvas id="myCanvas" width="500" height="500"></canvas>
     <script>
 function logDebug(message) {
     let timestamp = new Date().toISOString();
@@ -20,34 +18,49 @@ function logDebug(message) {
     console.log(debugMsg);
     let consoleDiv = document.getElementById("console");
     consoleDiv.innerHTML += debugMsg;
-    consoleDiv.scrollTop = consoleDiv.scrollHeight; // Auto-scroll
+    consoleDiv.scrollTop = consoleDiv.scrollHeight;
 }
 
-function createInvalidPath() {
-    const ctx = document.getElementById("myCanvas").getContext("2d");
-    logDebug("Step 1: Starting to draw invalid path...");
-    try {
-        ctx.beginPath();
-        ctx.moveTo(43, 22); // Normal move
-        ctx.quadraticCurveTo(7, 12, 91, 109); // Normal curve
-        ctx.quadraticCurveTo(122, 46, 54, 69, 70, 506806141048); // Invalid large endpoint
-        ctx.arcTo(62, 18, 72, 88, 37); // Normal arc
-        ctx.rect(67, 60, 31, 4875397766316111); // Invalid large height
-        ctx.stroke(); // Attempt to render
-        logDebug("Step 2: Path drawing completed (no crash yet).");
-    } catch (e) {
-        logDebug(`Step 2: Error during path drawing: ${e.message}`);
-        document.getElementById("status").innerHTML = "Exploit failed!";
-        return;
+function simulateRace() {
+    logDebug("Starting local simulation for UAF...");
+    let logIdentifier = "";
+    let isProcessing = false;
+
+    function updateLog() {
+        if (isProcessing) return; // محاكاة سباق
+        isProcessing = true;
+        logIdentifier = "A".repeat(8192 * 64); // سلسلة طويلة
+        logDebug("Step 1: Log identifier updated.");
+        isProcessing = false;
     }
-    logDebug("Step 3: Test completed - check for crash or rendering issues.");
-    document.getElementById("status").innerHTML = "Success - Test Completed!";
+
+    function processFrame() {
+        if (!isProcessing) {
+            logDebug(`Step 2: Processing frame with log: ${logIdentifier.substring(0, 10)}...`);
+        } else {
+            logDebug("Step 2: Race condition detected - processing during update!");
+            document.getElementById("status").innerHTML = "Exploit failed - Potential UAF!";
+            return;
+        }
+    }
+
+    for (let z = 0; z < 5; z++) {
+        setTimeout(() => {
+            for (let x = 0; x < 32 * 25; x++) {
+                setTimeout(updateLog, Math.random() * 10); // تحديث عشوائي
+                setTimeout(processFrame, Math.random() * 10); // معالجة عشوائية
+                logDebug(`Step 3: Iteration ${x} in loop ${z} completed.`);
+            }
+        }, 500 * z);
+    }
+
+    setTimeout(() => {
+        logDebug("Step 4: Simulation completed - check for issues.");
+        document.getElementById("status").innerHTML = "Success - Test Completed!";
+    }, 3000);
 }
 
-window.onload = function() {
-    logDebug("Initializing PoC...");
-    createInvalidPath();
-};
+window.onload = simulateRace;
     </script>
 </body>
 </html>
