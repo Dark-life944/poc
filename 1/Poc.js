@@ -29,7 +29,7 @@ function main() {
         let obj = new Array(length);
         Object.defineProperty(obj, '-1', {
             set() {
-                print('Setter called, setting OBJ.a to 1337');
+                alert('Setter called, setting OBJ.a to 1337');
                 OBJ.a = 1337;
             }
         });
@@ -45,7 +45,7 @@ function main() {
         }
 
         let r = f(obj, idx);
-        print('Result: ' + r);
+        alert('Result: ' + r);
     }
 }
 
