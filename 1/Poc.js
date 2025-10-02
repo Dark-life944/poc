@@ -1,5 +1,5 @@
 // POC for CVE-2019-17026-like Type Confusion in WebKit on PS4 10.xx
-const NUM_ITERATIONS = 2000;
+const NUM_ITERATIONS = 10;
 const ARRAY_LENGTH = 100;
 
 let OBJ = { a: 41 };
