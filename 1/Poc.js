@@ -189,7 +189,7 @@ main();
 
 
 // Run with reduced iterations for easier monitoring
-const NUM_ITERATIONS = 5;
+const NUM_ITERATIONS = 8;
 const SPRAY_SIZE = 100000; // زيادة لتلاعب الذاكرة
 const v4 = [{a: 0}, {a: 1}, {a: 2}, {a: 3}, {a: 4}];
 let ab = new ArrayBuffer(0x1000);
