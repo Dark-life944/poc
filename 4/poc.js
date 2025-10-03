@@ -10,7 +10,7 @@ function Target(Special, Idx, Value) {
     y[0] = Arr[Idx];
     //alert('Target called, Arr[' + Idx + '] = ' + Arr[Idx].toString(16) + ', y[0] = ' + y[0].toString(16));
     let readBack = y[0]; // قراءة للتأكيد
-    alert('Read back from y[0] = ' + readBack.toString(16));
+    //alert('Read back from y[0] = ' + readBack.toString(16));
 }
 
 class SoSpecial extends Array {
