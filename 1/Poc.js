@@ -139,7 +139,7 @@ main();
 
 
 // Run with increased iterations for JIT compilation
-const NUM_ITERATIONS = 1000;
+const NUM_ITERATIONS = 5;
 const v4 = [{a: 0}, {a: 1}, {a: 2}, {a: 3}, {a: 4}];
 let ab = new ArrayBuffer(0x1000);
 let x = {buffer: ab, length: 13.39, byteOffset: 13.40, data: 3.54484805889626e-310};
