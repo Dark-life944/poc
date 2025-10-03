@@ -53,7 +53,7 @@ let OBJ = { a: 41 };
 OBJ.a = 42;
 let TARGET = { secret: 0x12345678, extra: 0x87654321 };
 let OTHER = { value: 0xdeadbeef };
-let BUFFER = new Array(100000); // مصفوفة كبيرة لملء الذاكرة
+let BUFFER = new Array(1000000); // مصفوفة كبيرة لملء الذاكرة
 
 function f(obj, idx, targetAddr) {
     let v = OBJ.a;
