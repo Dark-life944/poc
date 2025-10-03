@@ -5,7 +5,7 @@ function Target(Special, Idx, Value) {
     Arr[Idx] = 0x41414141; // كتابة قيمة أولية
     Special.slice(); // يحفز الـ JIT
     Arr[Idx] = Value; // كتابة القيمة النهائية
-    alert('Target called, Arr[' + Idx + '] = ' + Arr[Idx].toString(16));
+    //alert('Target called, Arr[' + Idx + '] = ' + Arr[Idx].toString(16));
 }
 
 class SoSpecial extends Array {
