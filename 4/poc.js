@@ -5,7 +5,7 @@ function Target(Special, Idx, Value) {
     Arr[Idx] = 0x41414141;
     Special.slice();
     Arr[Idx] = Value;
-    alert('Target called, Arr[' + Idx + '] = ' + Arr[Idx].toString(16));
+    //alert('Target called, Arr[' + Idx + '] = ' + Arr[Idx].toString(16));
 }
 
 class SoSpecial extends Array {
