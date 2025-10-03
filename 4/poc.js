@@ -8,10 +8,10 @@ function Target(Special, Idx, Value) {
     Special.slice();
     Arr[Idx] = Value;
     y[0] = Arr[Idx];
-    // محاولة تنفيذ شيفرة بسيطة
     if (Idx === 0x20 && Trigger) {
         let shellcode = new Uint32Array(ab);
-        let func = new Function('alert("Hacked!");'); // شيفرة بسيطة
+        // شيفرة افتراضية (تحتاج تعديلًا حسب PS4)
+        let func = new Function('let win = window.open("about:blank"); win.document.write("<h1>PS4 Hacked!</h1>");');
         func();
     }
     //alert('Target called, Arr[' + Idx + '] = ' + Arr[Idx].toString(16) + ', y[0] = ' + y[0].toString(16));
