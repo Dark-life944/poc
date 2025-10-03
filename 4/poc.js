@@ -14,7 +14,7 @@ function Target(Special, Idx, Value) {
         let func = new Function('alert("Hacked!");'); // شيفرة بسيطة
         func();
     }
-    alert('Target called, Arr[' + Idx + '] = ' + Arr[Idx].toString(16) + ', y[0] = ' + y[0].toString(16));
+    //alert('Target called, Arr[' + Idx + '] = ' + Arr[Idx].toString(16) + ', y[0] = ' + y[0].toString(16));
 }
 
 class SoSpecial extends Array {
