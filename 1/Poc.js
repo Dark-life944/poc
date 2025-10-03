@@ -261,7 +261,7 @@ function v7(v8, v9) {
     }
     const v11 = v4.pop();
     try {
-        v11[0] = 0x1337; // الكتابة
+        v11[0] = 0xdeadbeef; // الكتابة
         alert('Write to v11[0] succeeded with value: ' + v11[0].toString(16));
         v11[1] = TARGET; // محاولة كتابة TARGET
         let readValue = v11[0]; // القراءة
