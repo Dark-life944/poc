@@ -19,7 +19,7 @@ function Target(Special, Idx, Value) {
         let funcAddr = 0x12345678; // عنوان افتراضي (سيحتاج تعديلًا)
         window.setTimeout(function() { alert('ROP Success!'); }, 0); // اختبار بديل
     }
-    alert('Target called, Arr[' + Idx + '] = ' + Arr[Idx].toString(16) + ', y[0] = ' + y[0].toString(16));
+    //alert('Target called, Arr[' + Idx + '] = ' + Arr[Idx].toString(16) + ', y[0] = ' + y[0].toString(16));
 }
 
 class SoSpecial extends Array {
