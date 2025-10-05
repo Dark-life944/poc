@@ -13,7 +13,7 @@ function Target(Special, Idx, Value) {
     if (Idx === 0x20 && Trigger) {
         // يمكن إضافة تحقق هنا لاحقًا
     }
-    //alert(`Target called, Arr[${Idx.toString(16)}] = ${Arr[Idx].toString(16)}, y[0] = ${y[0].toString(16)}`);
+    alert(`Target called, Arr[${Idx.toString(16)}] = ${Arr[Idx].toString(16)}, y[0] = ${y[0].toString(16)}`);
 }
 
 class SoSpecial extends Array {
