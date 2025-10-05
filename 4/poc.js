@@ -375,7 +375,7 @@ function EnhancedTarget(Special, Idx, Value) {
 
 // ==================== الدالة الرئيسية ====================
 
-function enhanced_main() {
+function main() {
     alert("🚀 بدء الـ Exploit المتقدم...");
     
     try {
@@ -437,4 +437,4 @@ header.style.textShadow = "0 2px 4px rgba(0,0,0,0.5)";
 document.body.prepend(header);
 
 // بدء التنفيذ المحسّن
-enhanced_main();
+main();
