@@ -207,7 +207,7 @@ function main() {
 main();
 */
 
-
+/* v5
 let Trigger = false;
 let Arr = null;
 let ab = new ArrayBuffer(0x2000); // زيادة الحجم
@@ -278,3 +278,4 @@ function main() {
 }
 
 main();
+*/
