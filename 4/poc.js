@@ -12,7 +12,7 @@ function Target(Special, Idx, Value) {
     if (Idx === 0x20 && Trigger) {
         // يمكن إضافة تحقق هنا لاحقًا
     }
-    console.log(`Target called, Arr[${Idx.toString(16)}] = ${Arr[Idx].toString(16)}, y[0] = ${y[0].toString(16)}`);
+    alert(`Target called, Arr[${Idx.toString(16)}] = ${Arr[Idx].toString(16)}, y[0] = ${y[0].toString(16)}`);
 }
 
 class SoSpecial extends Array {
@@ -36,9 +36,9 @@ function main() {
     }
     Trigger = true;
     Target(Snowflake, 0x20, 0xdeadc0de); // قيمة مختلفة للتحقق
-    console.log(`Final Arr[0x20] = ${Arr[0x20].toString(16)}`);
-    console.log(`y[0] = ${y[0].toString(16)}`);
-    console.log(`Arr.length = ${Arr.length}`);
+    alert(`Final Arr[0x20] = ${Arr[0x20].toString(16)}`);
+    alert(`y[0] = ${y[0].toString(16)}`);
+    alert(`Arr.length = ${Arr.length}`);
 }
 
 main();
