@@ -108,7 +108,7 @@ function Target(Special, Idx, Value) {
         if (Idx === 0x20 && Trigger) {
            // alert(`Trigger hit at ${Idx.toString(16)}, y[0] = ${y[0].toString(16)}`);
         }
-        alert(`Target called, Arr[${Idx.toString(16)}] = ${Arr[Idx].toString(16)}, y[0] = ${y[0].toString(16)}`);
+        //alert(`Target called, Arr[${Idx.toString(16)}] = ${Arr[Idx].toString(16)}, y[0] = ${y[0].toString(16)}`);
     } catch (e) {
         alert(`Error at Idx ${Idx.toString(16)}: ${e.message}`);
     }
