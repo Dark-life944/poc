@@ -56,9 +56,9 @@ function Target(Special, Idx, Value) {
     Arr[Idx] = Value; // كتابة القيمة 64-bit
     y[0] = BigInt(Arr[Idx]); // تحويل إلى 64-bit
     if (Idx === 0x20 && Trigger) {
-        alert(`Trigger hit at ${Idx.toString(16)}, y[0] = ${y[0].toString(16)}`);
+        //alert(`Trigger hit at ${Idx.toString(16)}, y[0] = ${y[0].toString(16)}`);
     }
-    alert(`Target called, Arr[${Idx.toString(16)}] = ${Arr[Idx].toString(16)}, y[0] = ${y[0].toString(16)}`);
+    //alert(`Target called, Arr[${Idx.toString(16)}] = ${Arr[Idx].toString(16)}, y[0] = ${y[0].toString(16)}`);
 }
 
 class SoSpecial extends Array {
