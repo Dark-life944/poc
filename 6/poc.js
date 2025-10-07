@@ -8,7 +8,7 @@ function jitter() {
 
 function trigger() {
         let a = jitter(); // a == true
-        for(let i = 0; i < 0x100000; i++) { 
+        for(let i = 0; i < 0x10000000; i++) { 
                 jitter(); // making hot jitter function until it generates FTL bytecode.
         }
         let b = jitter(); // b == 0
