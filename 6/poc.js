@@ -14,7 +14,7 @@ function trigger() {
         let b = jitter(); // b == 0
 
         if (a != b) {
-            print("a != b");
+            alert("a != b");
         }
 }
 
