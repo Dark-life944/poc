@@ -207,7 +207,7 @@ var stage2 = {
 
     write64: function(where, what) {
         set_victim_addr(where)
-        print('where',hex(where))
+        alert('where',hex(where))
         victim_write(this.fakeobj(what))
         reset_victim_addr()
     },
