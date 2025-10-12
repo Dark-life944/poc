@@ -1,10 +1,201 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="ar">
 <head>
-    <title>POC Test</title>
-    <script src="poc.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>JP2 Viewer — عرض من Base64 أو URL</title>
+<style>
+  body{font-family:system-ui,Segoe UI,Roboto,Arial;max-width:900px;margin:24px auto;padding:0 16px;color:#0b0b0b}
+  h1{font-size:1.25rem}
+  textarea{width:100%;height:120px;font-family:monospace}
+  input[type=text]{width:100%}
+  .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+  button{padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#f6f6f6;cursor:pointer}
+  img{max-width:100%;border:1px solid #ddd;margin-top:12px;display:block}
+  .note{background:#fff3cd;border-left:4px solid #ffd24d;padding:10px;margin:12px 0;border-radius:6px}
+  pre{background:#f7f7f7;padding:10px;border-radius:6px;overflow:auto}
+  .muted{color:#666;font-size:0.9rem}
+</style>
 </head>
 <body>
-    <h1>Running POC</h1>
+  <h1>مستعرض JP2 (Base64 / URL)</h1>
+
+  <div class="note">
+    <strong>تحذير أمني:</strong> إذا كان الملف PoC أو قد يحتوي على استغلال، لا تفتحه في متصفحك الرئيسي. استخدم بيئة معزولة (VM) أو جهاز اختبار. الصفحة لا تجري أي فحص أمني تلقائي — هي فقط تعرض/تنزيل البيانات التي تزودها بها.
+  </div>
+
+  <label class="muted">1) الصق سلسلة Base64 هنا (بدون وسوم data: أو بصيغة data: إذا وُجدت):</label>
+  <textarea id="b64" placeholder="AAAADGpQICANCocKAAAAFGZ0eXBqcDIgAAAA..."></textarea>
+
+  <div class="row">
+    <button id="renderB64">عرض من Base64</button>
+    <button id="downloadB64">تنزيل كـ poc.jp2</button>
+    <button id="clear">مسح</button>
+  </div>
+
+  <hr />
+
+  <label class="muted">2) أو ضع رابط URL مباشر لملف JP2 (يجب أن يرد السيرفر بـ Content-Type: image/jp2 أو ببساطة بايتات JP2):</label>
+  <input id="url" type="text" placeholder="https://example.com/poc.jp2" />
+  <div class="row" style="margin-top:8px">
+    <button id="fetchUrl">جلب وعرض</button>
+    <button id="downloadUrl">تنزيل من URL</button>
+  </div>
+
+  <hr />
+
+  <div id="info" style="margin-top:12px"></div>
+
+  <h3>المعاينة</h3>
+  <div id="previewArea">
+    <div id="previewStatus" class="muted">لم تُحمّل أي صورة بعد.</div>
+    <img id="previewImg" alt="JP2 preview (if supported)" style="display:none" />
+    <pre id="hexDump" style="display:none"></pre>
+    <a id="dlLink" href="#" download="poc.jp2" style="display:none">⬇️ تنزيل الملف</a>
+  </div>
+
+<script>
+function showStatus(msg, isError=false){
+  const info = document.getElementById('info');
+  info.textContent = msg;
+  info.style.color = isError ? 'crimson' : 'inherit';
+}
+
+function base64ToUint8Array(b64) {
+  // accept data:...base64,strip prefix
+  const idx = b64.indexOf('base64,');
+  if(idx !== -1) b64 = b64.slice(idx + 7);
+  // remove whitespace/newlines
+  b64 = b64.replace(/\\s+/g,'');
+  try {
+    const binary = atob(b64);
+    const len = binary.length;
+    const arr = new Uint8Array(len);
+    for(let i=0;i<len;i++) arr[i]=binary.charCodeAt(i);
+    return arr;
+  } catch(e) {
+    return null;
+  }
+}
+
+function uint8ToHex(u8, count=32) {
+  const n = Math.min(u8.length, count);
+  let out = '';
+  for(let i=0;i<n;i++){
+    const h = u8[i].toString(16).padStart(2,'0');
+    out += h + ( (i+1)%2===0 ? ' ' : '' );
+    if((i+1)%8===0) out += '\\n';
+  }
+  return out.trim();
+}
+
+function renderFromUint8(arr, name='poc.jp2') {
+  const blob = new Blob([arr], {type: 'image/jp2'});
+  const url = URL.createObjectURL(blob);
+  const img = document.getElementById('previewImg');
+  const status = document.getElementById('previewStatus');
+  const hex = document.getElementById('hexDump');
+  const dl = document.getElementById('dlLink');
+
+  img.onload = () => {
+    status.textContent = 'الصورة عُرِضَت (إن دعم المتصفح JP2).';
+    status.style.color = 'green';
+  };
+  img.onerror = () => {
+    status.textContent = 'فشل العرض — المتصفح قد لا يدعم JP2. يمكنك تنزيل الملف أو فتحه في برنامج يدعم JP2.';
+    status.style.color = 'crimson';
+  };
+
+  img.src = url;
+  img.style.display = 'block';
+
+  hex.style.display = 'block';
+  hex.textContent = 'أول 32 بايت (هيكس):\\n' + uint8ToHex(arr, 32);
+
+  dl.style.display = 'inline-block';
+  dl.href = url;
+  dl.download = name;
+
+  // show basic signature detection (JP2 signature box: 00 00 00 0C 6A 50 20 20)
+  const signature = [0x00,0x00,0x00,0x0c,0x6a,0x50,0x20,0x20];
+  let ok=true;
+  if(arr.length < signature.length) ok=false;
+  else {
+    for(let i=0;i<signature.length;i++){
+      if(arr[i] !== signature[i]) { ok=false; break; }
+    }
+  }
+  if(ok) showStatus('توقيع JP2 موجود في البداية (signature box detected).');
+  else showStatus('لم يُكتشَف توقيع JP2 في البايتات الأولى — قد لا يكون هذا ملف JP2 صحيحاً.', true);
+}
+
+document.getElementById('renderB64').addEventListener('click', () => {
+  const b64 = document.getElementById('b64').value.trim();
+  if(!b64){ showStatus('لا توجد بيانات Base64.', true); return; }
+  const arr = base64ToUint8Array(b64);
+  if(!arr){ showStatus('فشل تحويل Base64. تأكد من صلاحية السلسلة.', true); return; }
+  renderFromUint8(arr);
+});
+
+document.getElementById('downloadB64').addEventListener('click', () => {
+  const b64 = document.getElementById('b64').value.trim();
+  if(!b64){ showStatus('لا توجد بيانات Base64.', true); return; }
+  const arr = base64ToUint8Array(b64);
+  if(!arr){ showStatus('فشل تحويل Base64. تأكد من صلاحية السلسلة.', true); return; }
+  const blob = new Blob([arr], {type:'application/octet-stream'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'poc.jp2';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  showStatus('بدأ تنزيل poc.jp2');
+});
+
+document.getElementById('clear').addEventListener('click', () => {
+  document.getElementById('b64').value='';
+  document.getElementById('previewImg').style.display='none';
+  document.getElementById('hexDump').style.display='none';
+  document.getElementById('previewStatus').textContent='لم تُحمّل أي صورة بعد.';
+  document.getElementById('dlLink').style.display='none';
+  showStatus('تم المسح.');
+});
+
+document.getElementById('fetchUrl').addEventListener('click', async () => {
+  const url = document.getElementById('url').value.trim();
+  if(!url){ showStatus('ضع رابط URL أولاً.', true); return; }
+  try {
+    showStatus('جلب الملف من URL ...');
+    const resp = await fetch(url);
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const buf = await resp.arrayBuffer();
+    const u8 = new Uint8Array(buf);
+    renderFromUint8(u8, url.split('/').pop() || 'poc.jp2');
+  } catch(e) {
+    showStatus('فشل جلب الملف: ' + e.message, true);
+  }
+});
+
+document.getElementById('downloadUrl').addEventListener('click', async () => {
+  const url = document.getElementById('url').value.trim();
+  if(!url){ showStatus('ضع رابط URL أولاً.', true); return; }
+  try {
+    showStatus('تحميل الملف من URL ...');
+    const resp = await fetch(url);
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const blob = await resp.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const filename = url.split('/').pop() || 'poc.jp2';
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    showStatus('بدأ تنزيل ' + filename);
+  } catch(e) {
+    showStatus('فشل التحميل: ' + e.message, true);
+  }
+});
+</script>
 </body>
 </html>
