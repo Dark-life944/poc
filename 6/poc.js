@@ -1,4 +1,4 @@
-alert("Hello World!", browser);
+alert("Hello World!");
 
 // Allocate some memory to make the leak more obvious,
 // and use it inside the message listener
