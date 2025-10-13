@@ -1,21 +1,9 @@
-const arr = [0];
+alert("Hello World!", browser);
 
-function jitter() {
-        for (let _ in arr) { // create EnumeratorNextUpdateIndexAndMode DFG node.
-                return 0 in arr; // create HasIndexedProperty DFG node.
-        }
-}
+// Allocate some memory to make the leak more obvious,
+// and use it inside the message listener
+const useSomeMemory = new Uint8Array(50 * 1024 * 1024);
 
-function trigger() {
-        let a = jitter(); // a == true
-        for(let i = 0; i < 0x10000000; i++) { 
-                jitter(); // making hot jitter function until it generates FTL bytecode.
-        }
-        let b = jitter(); // b == 0
-
-        if (a != b) {
-            alert("a != b");
-        }
-}
-
-trigger();
+browser.runtime.onMessage.addListener(() => {
+    alert(useSomeMemory[0]);
+})
