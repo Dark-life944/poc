@@ -28,7 +28,7 @@ var trigger = {
 };
 
 var pointer_like_data = [];
-for (var i = 0; i < 100; i++) {
+for (var i = 0; i < 1000; i++) {
     pointer_like_data.push(0x40000000 + i * 0x1000); 
 }
 
