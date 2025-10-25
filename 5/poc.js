@@ -18,7 +18,7 @@ for (var i = 0; i < 1000; i++) {
 
 
 var victim_index = 500;
-var victim = new Array(128); 
+var victim = new Array(1024); 
 
 var trigger = {
     valueOf: function() {
