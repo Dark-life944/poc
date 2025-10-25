@@ -11,4 +11,4 @@ const o14 = {
     "valueOf": f11,
 };
 v0.fill(v10, o14);
-alert("done");
+gc();
