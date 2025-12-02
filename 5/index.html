@@ -2,49 +2,39 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>WebKit JIT Progressive Test</title>
-<style>
-    body { font-family: sans-serif; padding: 20px; }
-    #output { margin-top: 20px; font-size: 1.1em; color: #333; }
-</style>
+<title>Baseline JIT Test</title>
 </head>
 <body>
-<h1>اختبار تفعيل Baseline JIT تدريجيًا</h1>
-<p>يقيس الزمن لكل جولة، إذا لاحظت انخفاض مستمر فهذا يشير لتفعيل JIT.</p>
-<button id="runTest">تشغيل الاختبار</button>
-<div id="output"></div>
+<h1>Baseline JIT Stress Test</h1>
+<pre id="output"></pre>
 
 <script>
-function testJIT(iterations = 1000000, rounds = 5) {
-    const output = document.getElementById('output');
-    output.innerHTML = '';
+function heavyComputation(size) {
+    let arr = new Array(size);
+    for (let i = 0; i < size; i++) arr[i] = Math.random() * 1000;
 
-    let round = 1;
-
-    function runRound() {
-        let sum = 0;
-        const start = performance.now();
-
-        for (let i = 0; i < iterations; i++) {
-            sum += i % 3; // عملية بسيطة متكررة
-        }
-
-        const end = performance.now();
-        const duration = end - start;
-
-        output.innerHTML += `الجولة ${round}: الوقت = ${duration.toFixed(2)} ms, Sum = ${sum}<br>`;
-
-        round++;
-        if (round <= rounds) {
-            // تأخير صغير لإعطاء فرصة للمتصفح لتحسين الأداء
-            setTimeout(runRound, 100);
-        }
+    let sum = 0;
+    for (let i = 0; i < arr.length; i++) {
+        sum += Math.sqrt(arr[i]) * Math.sin(arr[i]) + Math.log(arr[i] + 1);
     }
-
-    runRound();
+    return sum;
 }
 
-document.getElementById('runTest').addEventListener('click', () => testJIT());
+const output = document.getElementById('output');
+const rounds = 5;
+const size = 10_000_000; // 10 مليون عنصر لكل جولة
+let results = [];
+
+for (let r = 1; r <= rounds; r++) {
+    const start = performance.now();
+    const res = heavyComputation(size);
+    const end = performance.now();
+    const duration = (end - start).toFixed(2);
+    results.push(duration);
+    output.textContent += `جولة ${r}: ${duration} ms\n`;
+}
+
+output.textContent += "\nالأرقام الأعلى تعني وقت أطول، انخفاض تدريجي يدل على أن JIT يعمل.";
 </script>
 </body>
 </html>
