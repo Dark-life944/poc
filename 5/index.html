@@ -1,10 +1,199 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="ar">
 <head>
-    <title>POC Test</title>
-    <script src="poc.js"></script>
+  <meta charset="utf-8" />
+  <title>PNG POC Loader</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Arial; padding: 18px; background:#111; color:#eee; }
+    header { margin-bottom: 12px; }
+    button { margin:6px; padding:8px 12px; }
+    .row { display:flex; gap:12px; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; }
+    #log { white-space:pre-wrap; background:#040404; color:#bcd; padding:10px; border-radius:6px; max-height:38vh; overflow:auto; font-family: monospace; font-size:12px; }
+    img.sbox { width:160px; height:160px; object-fit:contain; background:#222; border:1px solid #333; }
+    canvas { background:#222; border:1px solid #333; }
+  </style>
 </head>
 <body>
-    <h1>Running POC</h1>
+  <header>
+    <h2>PNG POC loader — WebKit test</h2>
+    <div>طرق متعددة لتحميل وعرض PNG. راقب السجل أسفل الصفحة (klog على الجهاز).</div>
+  </header>
+
+  <div class="row">
+    <button id="btn-load-all">تحميل كل الطرق</button>
+    <button id="btn-load-datauri">تحميل Data-URI</button>
+    <button id="btn-load-remote">تحميل ملفات محلية (pic1.png, icon0.png, save_data.png)</button>
+    <button id="btn-fetch-createbitmap">fetch → createImageBitmap</button>
+    <button id="btn-clear-log">مسح السجل</button>
+  </div>
+
+  <div class="row">
+    <div>
+      <div>علامة &lt;img&gt; مباشرة (dataURI):</div>
+      <img id="img-datauri" class="sbox" alt="img-datauri">
+    </div>
+
+    <div>
+      <div>علامة &lt;img&gt; مباشرة (pic1.png):</div>
+      <img id="img-pic1" class="sbox" alt="img-pic1" src="">
+    </div>
+
+    <div>
+      <div>Canvas (drawImage):</div>
+      <canvas id="cnv" width="320" height="320"></canvas>
+    </div>
+
+    <div>
+      <div>createImageBitmap output:</div>
+      <canvas id="cnv-bitmap" width="320" height="320"></canvas>
+    </div>
+  </div>
+
+  <div class="row">
+    <div style="flex:1">
+      <b>سجل الأحداث</b>
+      <div id="log">جاهز.</div>
+    </div>
+  </div>
+
+<script>
+/*
+  صفحة اختبار PNG:
+  - ضع ملفاتك (pic1.png, icon0.png, save_data.png) في نفس مجلد الملف أو حدِّث المسارات.
+  - تحقّق من klog أثناء التحميل لملاحظة أي رسائل خطأ من libpng/system.
+*/
+
+const logEl = document.getElementById('log');
+function log(...args) {
+  const t = new Date().toISOString().replace('T',' ').replace('Z','');
+  logEl.textContent += `\n[${t}] ` + args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function clearLog(){ logEl.textContent = ''; }
+
+const dataBase64 = (
+  "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgEAIAAACsiDHgAAAA5UlEQVRYhdWWwQqDMBBEp+BBf8t+"
++ "t/2t9pYeBgOShiZmk8x6GIZF5D3WoI8QQgA+L+Ca72Ryc34YPSczX87i81p3twLrznQocKIzl/Pt"
++ "8nBd0QFg87KBX+js8gJ5dKawwD90puQZKEPnXGwDNejsMgL16EwBgbvozKlnoA2d80kbsEBnHy5g"
++ "h84cKGCNHgX4x+4PHQC2Z+cN9ERn7ybQH72bwCj0KGD3HRiLzvuNNjADnb1ZYB56s8Bs9ChQfwY0"
++ "0Dmv3IASOnuxgB56sYAqehTInwFtdM4zG/CAzp4I+EFPBLyhM7/mQv5eTiC+xQAAAABJRU5ErkJg"
++ "gg=="
+);
+
+// بيانات URI من الـ base64 أعلاه:
+const dataUri = "data:image/png;base64," + dataBase64;
+
+// عناصر DOM
+const imgData = document.getElementById('img-datauri');
+const imgPic1 = document.getElementById('img-pic1');
+const canvas = document.getElementById('cnv');
+const ctx = canvas.getContext('2d');
+const cnvBitmap = document.getElementById('cnv-bitmap');
+const ctxBitmap = cnvBitmap.getContext('2d');
+
+document.getElementById('btn-load-datauri').addEventListener('click', async ()=> {
+  log("تحميل Data-URI عبر <img> و Image()");
+  // <img> مباشر
+  imgData.src = dataUri;
+  imgData.onload = () => log("img-datauri.onload fired");
+  imgData.onerror = (e) => log("img-datauri.onerror", e);
+
+  // Image() object
+  const im = new Image();
+  im.onload = () => {
+    log("Image() onload fired - سيُرسم على canvas الآن");
+    try {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(im,0,0,canvas.width,canvas.height);
+      log("رسم Data-URI على canvas ناجح");
+    } catch(err){
+      log("خطأ أثناء رسم Data-URI على canvas:", err);
+    }
+  };
+  im.onerror = (e) => log("Image() onerror", e);
+  im.src = dataUri;
+});
+
+document.getElementById('btn-load-remote').addEventListener('click', ()=> {
+  log("تعيين src لملفات محلية: pic1.png, icon0.png, save_data.png (إن وُجدت)");
+  // حاول عرض pic1.png و icon0.png و save_data.png
+  imgPic1.src = "pic1.png";
+  imgPic1.onload = ()=> log("img-pic1.onload");
+  imgPic1.onerror = (e)=> log("img-pic1.onerror", e);
+
+  // icon0 في عنصر آخر (إضافة ديناميكية)
+  const i2 = new Image();
+  i2.className = "sbox";
+  i2.onload = ()=> log("icon0.png onload");
+  i2.onerror = (e)=> log("icon0.png onerror", e);
+  i2.src = "icon0.png";
+  document.body.appendChild(i2);
+
+  // save_data.png: محاولة رسم ثم تحرير الذاكرة
+  const i3 = new Image();
+  i3.onload = ()=> {
+    log("save_data.png loaded, محاولة رسم على canvas ثانوي");
+    try {
+      const tmp = document.createElement('canvas');
+      tmp.width = 256; tmp.height = 256;
+      const tctx = tmp.getContext('2d');
+      tctx.drawImage(i3,0,0, tmp.width, tmp.height);
+      log("save_data.png رسم ناجح على tmp canvas");
+    } catch(err) {
+      log("خطأ عند رسم save_data.png:", err);
+    }
+  };
+  i3.onerror = (e) => log("save_data.png onerror", e);
+  i3.src = "save_data.png";
+});
+
+document.getElementById('btn-fetch-createbitmap').addEventListener('click', async ()=> {
+  log("fetch(pic1.png) ثم createImageBitmap (إن مدعوم)");
+  try {
+    const resp = await fetch("pic1.png", {cache:'no-store'});
+    if (!resp.ok) { log("fetch failed", resp.status, resp.statusText); return; }
+    const blob = await resp.blob();
+    log("fetch succeeded, blob size:", blob.size);
+    if (window.createImageBitmap) {
+      try {
+        const bmp = await createImageBitmap(blob);
+        log("createImageBitmap succeeded. رسم في cnv-bitmap");
+        ctxBitmap.clearRect(0,0,cnvBitmap.width, cnvBitmap.height);
+        ctxBitmap.drawImage(bmp, 0, 0, cnvBitmap.width, cnvBitmap.height);
+        bmp.close && bmp.close();
+      } catch(bmpErr) {
+        log("createImageBitmap error:", bmpErr);
+      }
+    } else {
+      log("createImageBitmap غير مدعوم في هذا المتصفح");
+    }
+  } catch (err) {
+    log("خطأ عام أثناء fetch/createImageBitmap:", err);
+  }
+});
+
+document.getElementById('btn-load-all').addEventListener('click', ()=> {
+  clearLog(); log("بدء تحميل كل الطرق...");
+  document.getElementById('btn-load-datauri').click();
+  setTimeout(()=> document.getElementById('btn-load-remote').click(), 200);
+  setTimeout(()=> document.getElementById('btn-fetch-createbitmap').click(), 600);
+});
+
+document.getElementById('btn-clear-log').addEventListener('click', clearLog);
+
+// مراقبة أخطاء عامة في نافذة
+window.addEventListener('error', (ev) => {
+  log("window.onerror:", ev.message || ev.error || ev);
+});
+window.addEventListener('unhandledrejection', (ev) => {
+  log("unhandledrejection:", ev.reason || ev);
+});
+
+// عند التحميل الأولي، عرض Data-URI تلقائياً (قابل للتعطيل)
+imgData.src = dataUri;
+imgData.onload = ()=> log("img-datauri.onload (init)");
+imgData.onerror = (e)=> log("img-datauri.onerror (init)", e);
+</script>
 </body>
 </html>
