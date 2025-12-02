@@ -2,39 +2,44 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Baseline JIT Test</title>
+<title>JIT Stress Test</title>
 </head>
 <body>
-<h1>Baseline JIT Stress Test</h1>
+<h2>JIT Stress Test</h2>
 <pre id="output"></pre>
 
 <script>
-function heavyComputation(size) {
-    let arr = new Array(size);
-    for (let i = 0; i < size; i++) arr[i] = Math.random() * 1000;
+function stressTest(iterations, rounds) {
+    const results = [];
+    const output = document.getElementById("output");
 
-    let sum = 0;
-    for (let i = 0; i < arr.length; i++) {
-        sum += Math.sqrt(arr[i]) * Math.sin(arr[i]) + Math.log(arr[i] + 1);
+    for (let r = 1; r <= rounds; r++) {
+        const start = performance.now();
+        // مصفوفة كبيرة
+        const arr = [];
+        for (let i = 0; i < iterations; i++) {
+            arr.push(i);
+        }
+
+        // عمليات حسابية كثيفة
+        let sum = 0;
+        for (let i = 0; i < arr.length; i++) {
+            sum += Math.sqrt(arr[i] * Math.random());
+        }
+
+        const end = performance.now();
+        const duration = end - start;
+        results.push(duration.toFixed(2));
+        output.textContent += `Round ${r}: ${duration.toFixed(2)} ms\n`;
     }
-    return sum;
+
+    // إظهار ملخص
+    const avg = (results.reduce((a,b) => parseFloat(a)+parseFloat(b),0)/results.length).toFixed(2);
+    output.textContent += `\nAverage: ${avg} ms`;
 }
 
-const output = document.getElementById('output');
-const rounds = 5;
-const size = 10_000_000; // 10 مليون عنصر لكل جولة
-let results = [];
-
-for (let r = 1; r <= rounds; r++) {
-    const start = performance.now();
-    const res = heavyComputation(size);
-    const end = performance.now();
-    const duration = (end - start).toFixed(2);
-    results.push(duration);
-    output.textContent += `جولة ${r}: ${duration} ms\n`;
-}
-
-output.textContent += "\nالأرقام الأعلى تعني وقت أطول، انخفاض تدريجي يدل على أن JIT يعمل.";
+// تعديل القيم لتجربة أكثر ضغطًا
+stressTest(1000000, 5);
 </script>
 </body>
 </html>
