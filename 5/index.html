@@ -1,40 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Baseline JIT Test</title>
+<meta charset="UTF-8">
+<title>WebKit JIT Progressive Test</title>
+<style>
+    body { font-family: sans-serif; padding: 20px; }
+    #output { margin-top: 20px; font-size: 1.1em; color: #333; }
+</style>
 </head>
 <body>
-    <h1>Baseline JIT Test</h1>
-    <button onclick="runTest()">Run Test</button>
-    <p id="result"></p>
+<h1>اختبار تفعيل Baseline JIT تدريجيًا</h1>
+<p>يقيس الزمن لكل جولة، إذا لاحظت انخفاض مستمر فهذا يشير لتفعيل JIT.</p>
+<button id="runTest">تشغيل الاختبار</button>
+<div id="output"></div>
 
-    <script>
-        function testFunction(n) {
-            let sum = 0;
-            for (let i = 0; i < n; i++) {
-                sum += i * i;
-            }
-            return sum;
+<script>
+function testJIT(iterations = 1000000, rounds = 5) {
+    const output = document.getElementById('output');
+    output.innerHTML = '';
+
+    let round = 1;
+
+    function runRound() {
+        let sum = 0;
+        const start = performance.now();
+
+        for (let i = 0; i < iterations; i++) {
+            sum += i % 3; // عملية بسيطة متكررة
         }
 
-        function runTest() {
-            const n = 10_000_000;
-            // Warm-up loop (may trigger JIT compilation)
-            for (let i = 0; i < 5; i++) {
-                testFunction(1000);
-            }
+        const end = performance.now();
+        const duration = end - start;
 
-            const start = performance.now();
-            testFunction(n);
-            const end = performance.now();
+        output.innerHTML += `الجولة ${round}: الوقت = ${duration.toFixed(2)} ms, Sum = ${sum}<br>`;
 
-            const elapsed = end - start;
-            document.getElementById("result").innerText = `Execution time: ${elapsed.toFixed(2)} ms`;
-
-            console.log(`Execution time: ${elapsed.toFixed(2)} ms`);
-            alert(`Execution time: ${elapsed.toFixed(2)} ms`);
+        round++;
+        if (round <= rounds) {
+            // تأخير صغير لإعطاء فرصة للمتصفح لتحسين الأداء
+            setTimeout(runRound, 100);
         }
-    </script>
+    }
+
+    runRound();
+}
+
+document.getElementById('runTest').addEventListener('click', () => testJIT());
+</script>
 </body>
 </html>
